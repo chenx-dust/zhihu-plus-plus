@@ -23,6 +23,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,6 +59,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -114,6 +116,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 fun AccountSettingScreen(
     innerPadding: PaddingValues,
     unreadCount: Int = 0,
+    selectedSettingType: String? = null,
     onDismissRequest: () -> Unit = {},
 ) {
     val navigator = LocalNavigator.current
@@ -147,15 +150,42 @@ fun AccountSettingScreen(
     }
     val data by AccountData.asState()
 
+    fun isSelected(type: SettingsPaneDestination.Type) =
+        selectedSettingType == type.name
+
+    @Composable
+    fun animatedSettingColors(selected: Boolean): CardColors {
+        val containerColor by animateColorAsState(
+            targetValue = if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceBright
+            },
+            label = "settingSelectionContainerColor",
+        )
+        val contentColor by animateColorAsState(
+            targetValue = if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            label = "settingSelectionContentColor",
+        )
+        return CardColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = containerColor,
+            disabledContentColor = MaterialTheme.colorScheme.outlineVariant,
+        )
+    }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(padding),
         ) {
@@ -180,7 +210,7 @@ fun AccountSettingScreen(
 
             if (data.login) {
                 Row(
-                    Modifier.padding(16.dp, 0.dp, 16.dp, 16.dp).clickable {
+                    Modifier.padding(LocalCardHorizontalPadding.current, innerPadding.calculateTopPadding(), LocalCardHorizontalPadding.current, 16.dp).clickable {
                         navigator.onNavigate(
                             Person(
                                 id = data.self?.id ?: "",
@@ -254,7 +284,7 @@ fun AccountSettingScreen(
                     }
                 }
             } else {
-                SettingItemGroup {
+                SettingItemGroup(modifier = Modifier.padding(top = innerPadding.calculateTopPadding())) {
                     SettingItem(
                         title = { Text("登录知乎") },
                         icon = { Icon(Icons.AutoMirrored.Filled.Login, null) },
@@ -376,6 +406,7 @@ fun AccountSettingScreen(
                     description = { Text("主题颜色、字体大小等") },
                     icon = { Icon(Icons.Default.Palette, null) },
                     onClick = { navigator.onNavigate(Account.AppearanceSettings()) },
+                    colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Appearance)),
                 )
 
                 SettingItem(
@@ -383,6 +414,7 @@ fun AccountSettingScreen(
                     description = { Text("推荐、智能过滤、关键词屏蔽等") },
                     icon = { Icon(Icons.Default.FilterAlt, null) },
                     onClick = { navigator.onNavigate(Account.RecommendSettings()) },
+                    colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Recommend)),
                 )
 
                 SettingItem(
@@ -390,6 +422,7 @@ fun AccountSettingScreen(
                     description = { Text("GitHub、更新设置等") },
                     icon = { Icon(Icons.Default.Settings, null) },
                     onClick = { navigator.onNavigate(Account.SystemAndUpdateSettings) },
+                    colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.SystemAndUpdate)),
                 )
 
                 AnimatedVisibility(isDeveloper) {
@@ -397,6 +430,7 @@ fun AccountSettingScreen(
                         title = { Text("开发者选项") },
                         icon = { Icon(Icons.Default.Code, null) },
                         onClick = { navigator.onNavigate(Account.DeveloperSettings) },
+                        colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Developer)),
                     )
                 }
             }

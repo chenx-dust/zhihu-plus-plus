@@ -362,19 +362,21 @@ fun CommentScreen(
     var commentInput by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
     var replyToComment by remember { mutableStateOf<CommentModel?>(null) }
+    val currentContent = content()
+    val commentViewModelKey = remember(currentContent) { currentContent.commentViewModelKey() }
 
     // 根据内容类型选择合适的ViewModel
-    val viewModel: BaseCommentViewModel = when (val content = content()) {
+    val viewModel: BaseCommentViewModel = when (val content = currentContent) {
         is CommentHolder -> remember {
             // 子评论不进行状态保存
             ChildCommentViewModel(content)
         }
 
-        else -> viewModel {
+        else -> viewModel(key = commentViewModelKey) {
             RootCommentViewModel(content)
         }
     }
-    val rootContent = when (val content = content()) {
+    val rootContent = when (val content = currentContent) {
         is CommentHolder -> content.article
         else -> content
     }
@@ -404,8 +406,8 @@ fun CommentScreen(
     }
 
     // 初始加载评论
-    LaunchedEffect(content) {
-        if (viewModel.article != content()) {
+    LaunchedEffect(currentContent, viewModel) {
+        if (viewModel.article != currentContent) {
             error("Internal Error: Detected content mismatch")
         }
         if (viewModel.errorMessage == null) {
@@ -420,7 +422,7 @@ fun CommentScreen(
 
         isSending = true
         viewModel.submitComment(
-            content = content(),
+            content = currentContent,
             commentText = commentInput,
             httpClient = httpClient,
             context = context,
@@ -838,6 +840,14 @@ fun CommentScreen(
             }
         }
     }
+}
+
+private fun NavDestination.commentViewModelKey(): String = when (this) {
+    is Article -> "article:$type:$id"
+    is Question -> "question:$questionId"
+    is Pin -> "pin:$id"
+    is CommentHolder -> "comment:$commentId:${article.commentViewModelKey()}"
+    else -> "${this::class.qualifiedName}:${hashCode()}"
 }
 
 @OptIn(ExperimentalFoundationApi::class)

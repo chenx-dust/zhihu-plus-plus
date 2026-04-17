@@ -97,11 +97,12 @@ private data class HotSearchItem(
 fun SearchScreen(
     innerPadding: PaddingValues,
     search: Search,
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalActivity.current as MainActivity
     val preferences = remember { context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE) }
-    val viewModel = viewModel { SearchViewModel(search.query) }
+    val viewModel = viewModel(key = "search-${search.query}") { SearchViewModel(search.query) }
     val keyboardController = LocalSoftwareKeyboardController.current
     var searchText by remember { mutableStateOf(search.query) }
     val coroutineScope = rememberCoroutineScope()
@@ -169,7 +170,8 @@ fun SearchScreen(
                                     value = searchText,
                                     onValueChange = { searchText = it },
                                     modifier = Modifier
-                                        .weight(1f),
+                                        .weight(1f)
+                                        .padding(end = 8.dp),
                                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     ),
@@ -332,7 +334,10 @@ fun SearchScreen(
                         },
                         footer = ProgressIndicatorFooter,
                     ) { item ->
-                        FeedCard(item)
+                        FeedCard(
+                            item,
+                            selected = item.navDestination.matchesContentSelection(selectionState),
+                        )
                     }
 
                     val showRefreshFab = remember { preferences.getBoolean("showRefreshFab", true) }

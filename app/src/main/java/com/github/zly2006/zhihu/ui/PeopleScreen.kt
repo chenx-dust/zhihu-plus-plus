@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -409,7 +408,7 @@ fun PeopleScreen(
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
-    val viewModel = viewModel { PersonViewModel(person) }
+    val viewModel = viewModel(key = "person-${person.id}") { PersonViewModel(person) }
     val coroutineScope = rememberCoroutineScope()
 
     val titles = listOf(
@@ -457,7 +456,7 @@ fun PeopleScreen(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection).padding(innerPadding),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = {
@@ -472,14 +471,14 @@ fun PeopleScreen(
                 ),
                 scrollBehavior = scrollBehavior,
                 expandedHeight = 200.dp,
-                windowInsets = WindowInsets(0.dp),
             )
         },
-    ) { innerPadding ->
+    ) { contentPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
-                .padding(horizontal = 8.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding(),
+                ).padding(horizontal = 8.dp),
         ) {
             PrimaryScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
@@ -521,6 +520,7 @@ fun PeopleScreen(
                             PaginatedList(
                                 items = viewModel.answersFeedModel.allData,
                                 onLoadMore = { viewModel.answersFeedModel.loadMore(context) },
+                                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                                 isEnd = { viewModel.answersFeedModel.isEnd },
                                 footer = ProgressIndicatorFooter,
                                 modifier = Modifier.fillMaxSize(),
@@ -561,6 +561,7 @@ fun PeopleScreen(
                             PaginatedList(
                                 items = viewModel.articlesFeedModel.allData,
                                 onLoadMore = { viewModel.articlesFeedModel.loadMore(context) },
+                                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                                 isEnd = { viewModel.articlesFeedModel.isEnd },
                                 footer = ProgressIndicatorFooter,
                                 modifier = Modifier.fillMaxSize(),
@@ -592,6 +593,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.activitiesFeedModel.displayItems,
                             onLoadMore = { viewModel.activitiesFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.activitiesFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) {
@@ -604,6 +606,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.collectionsFeedModel.allData,
                             onLoadMore = { viewModel.collectionsFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.collectionsFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) { collection ->
@@ -616,6 +619,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.questionsFeedModel.allData,
                             onLoadMore = { viewModel.questionsFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.questionsFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) { question ->
@@ -628,6 +632,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.pinsFeedModel.allData,
                             onLoadMore = { viewModel.pinsFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.pinsFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) { pin ->
@@ -640,6 +645,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.columnsFeedModel.allData,
                             onLoadMore = { viewModel.columnsFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.columnsFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) { column ->
@@ -652,6 +658,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.followersFeedModel.allData,
                             onLoadMore = { viewModel.followersFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.followersFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) { people ->
@@ -664,6 +671,7 @@ fun PeopleScreen(
                         PaginatedList(
                             items = viewModel.followingFeedModel.allData,
                             onLoadMore = { viewModel.followingFeedModel.loadMore(context) },
+                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                             isEnd = { viewModel.followingFeedModel.isEnd },
                             footer = ProgressIndicatorFooter,
                         ) { people ->

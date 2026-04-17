@@ -63,6 +63,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.github.zly2006.zhihu.ui.LocalCardHorizontalPadding
 import com.github.zly2006.zhihu.util.ProvideContentColorTextStyle
 import kotlinx.coroutines.delay
 
@@ -143,7 +144,7 @@ fun SettingItemGroup(
                 highlightedKey = highlightedKey,
                 onPositioned = onPositioned,
                 bringIntoViewRequester = bringIntoViewRequester,
-            ).padding(horizontal = 16.dp)
+            ).padding(horizontal = LocalCardHorizontalPadding.current)
             .padding(bottom = 16.dp)
             .then(modifier),
     ) {

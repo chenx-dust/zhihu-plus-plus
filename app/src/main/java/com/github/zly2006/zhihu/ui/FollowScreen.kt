@@ -91,6 +91,7 @@ class FollowScreenData : ViewModel() {
 fun FollowScreen(
     scrollToTopTrigger: Int = 0,
     innerPadding: PaddingValues = PaddingValues(0.dp),
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val viewModel = viewModel<FollowScreenData>()
     val titles = listOf("推荐", "动态")
@@ -137,11 +138,13 @@ fun FollowScreen(
                 0 -> FollowRecommendScreen(
                     scrollToTopTrigger = scrollToTopTrigger,
                     isActive = pagerState.currentPage == 0,
+                    selectionState = selectionState,
                 )
 
                 1 -> FollowDynamicScreen(
                     scrollToTopTrigger = scrollToTopTrigger,
                     isActive = pagerState.currentPage == 1,
+                    selectionState = selectionState,
                 )
             }
         }
@@ -228,6 +231,7 @@ fun FollowingUsersRow() {
 fun FollowRecommendScreen(
     scrollToTopTrigger: Int = 0,
     isActive: Boolean = true,
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val context = LocalActivity.current as MainActivity
     val viewModel: FollowRecommendViewModel by context.viewModels()
@@ -284,6 +288,7 @@ fun FollowRecommendScreen(
             ) { item ->
                 FeedCard(
                     item,
+                    selected = item.navDestination.matchesContentSelection(selectionState),
                     onBlockUser = { feedItem ->
                         viewModel.handleBlockUser(context, feedItem) { authorInfo ->
                             userToBlock = authorInfo
@@ -334,6 +339,7 @@ fun FollowRecommendScreen(
 fun FollowDynamicScreen(
     scrollToTopTrigger: Int = 0,
     isActive: Boolean = true,
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val context = LocalActivity.current as MainActivity
     val viewModel: FollowViewModel by context.viewModels()
@@ -390,6 +396,7 @@ fun FollowDynamicScreen(
             ) { item ->
                 FeedCard(
                     item,
+                    selected = item.navDestination.matchesContentSelection(selectionState),
                     onLike = {
                         Toast.makeText(context, "收到喜欢，功能正在优化", Toast.LENGTH_SHORT).show()
                     },

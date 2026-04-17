@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +55,6 @@ fun ColorSchemeScreen(
     val cs = MaterialTheme.colorScheme
 
     Scaffold(
-        modifier = Modifier.padding(innerPadding),
         topBar = {
             TopAppBar(
                 title = { Text("Color Scheme") },
@@ -64,13 +63,12 @@ fun ColorSchemeScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },
-                windowInsets = WindowInsets(0),
             )
         },
-    ) { innerPadding ->
+    ) { contentPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(contentPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
@@ -117,6 +115,7 @@ fun ColorSchemeScreen(
             ColorGroup("Scrim") {
                 ColorSwatch(cs.scrim, Color.White, "scrim", "White")
             }
+            Spacer(modifier = Modifier.height(innerPadding.calculateBottomPadding()))
         }
     }
 }

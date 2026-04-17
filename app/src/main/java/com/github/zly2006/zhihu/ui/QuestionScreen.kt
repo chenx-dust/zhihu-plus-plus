@@ -103,6 +103,7 @@ import org.jsoup.Jsoup
 @Composable
 fun QuestionScreen(
     question: Question,
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val context = LocalContext.current
     val preferences = context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
@@ -189,12 +190,13 @@ fun QuestionScreen(
                 items = viewModel.displayItems,
                 onLoadMore = { viewModel.loadMore(context) },
                 isEnd = { viewModel.isEnd },
+                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                 modifier = Modifier.padding(innerPadding),
                 footer = ProgressIndicatorFooter,
                 topContent = {
                     item(1) {
                         Box(
-                            Modifier.padding(horizontal = 16.dp),
+                            Modifier.padding(horizontal = LocalCardHorizontalPadding.current),
                         ) {
                             if (questionContent.isNotEmpty()) {
                                 Column {
@@ -264,7 +266,9 @@ fun QuestionScreen(
                     }
                     item(2) {
                         FlowRow(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = LocalCardHorizontalPadding.current),
                             itemVerticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
@@ -346,7 +350,9 @@ fun QuestionScreen(
                             }
                         }
                         FlowRow(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = LocalCardHorizontalPadding.current),
                             itemVerticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
@@ -409,7 +415,10 @@ fun QuestionScreen(
                     }
                 },
             ) { item ->
-                FeedCard(item)
+                FeedCard(
+                    item,
+                    selected = item.navDestination.matchesContentSelection(selectionState),
+                )
             }
         }
     }
