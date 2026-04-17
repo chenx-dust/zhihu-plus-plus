@@ -29,7 +29,7 @@ internal fun articleEnterTransition(
         slideInHorizontally(tween(300)) { -it } + fadeIn(tween(300))
 
     ArticleViewModel.AnswerTransitionDirection.DEFAULT ->
-        slideInHorizontally(tween(300)) { it }
+        EnterTransition.None
 }
 
 internal fun articleExitTransition(
