@@ -155,9 +155,8 @@ fun CollectionContentScreen(
             listState = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = horizontalPadding)
-                .padding(top = innerPadding.calculateTopPadding()),
-            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                .padding(horizontal = horizontalPadding),
+            contentPadding = innerPadding,
             footer = ProgressIndicatorFooter,
             topContent = {
                 item(0) {

@@ -190,8 +190,7 @@ fun QuestionScreen(
                 items = viewModel.displayItems,
                 onLoadMore = { viewModel.loadMore(context) },
                 isEnd = { viewModel.isEnd },
-                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
-                modifier = Modifier.padding(innerPadding),
+                contentPadding = innerPadding,
                 footer = ProgressIndicatorFooter,
                 topContent = {
                     item(1) {

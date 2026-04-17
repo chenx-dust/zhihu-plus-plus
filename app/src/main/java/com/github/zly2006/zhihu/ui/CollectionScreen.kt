@@ -85,9 +85,8 @@ fun CollectionScreen(
             listState = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = horizontalPadding)
-                .padding(contentPadding),
-            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                .padding(horizontal = horizontalPadding),
+            contentPadding = contentPadding,
             footer = ProgressIndicatorFooter,
         ) { collection ->
             Card(

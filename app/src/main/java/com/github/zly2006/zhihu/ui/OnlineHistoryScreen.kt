@@ -153,7 +153,8 @@ fun OnlineHistoryScreen(
         }
         FeedPullToRefresh(viewModel, padding = innerPadding) {
             PaginatedList(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = innerPadding,
                 items = viewModel.displayItems,
                 onLoadMore = { viewModel.loadMore(context) },
                 isEnd = { viewModel.isEnd },
