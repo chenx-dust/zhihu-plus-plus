@@ -110,7 +110,6 @@ fun NotificationSettingsScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             LargeTopAppBar(
                 title = { Text("通知设置") },
@@ -127,7 +126,6 @@ fun NotificationSettingsScreen(
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors().copy(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ),
             )
