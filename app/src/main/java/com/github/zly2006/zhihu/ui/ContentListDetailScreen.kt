@@ -1,6 +1,10 @@
 package com.github.zly2006.zhihu.ui
 
 import android.os.Parcelable
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
@@ -133,44 +137,57 @@ fun ContentListDetailScreen(
                 )
                 return@BaseListDetailScreen
             }
-            when (destination) {
-                is Article -> {
-                    val viewModel: ArticleViewModel = viewModel(key = paneDestination.toString()) {
-                        ArticleViewModel(destination, activity.httpClient, null)
+            val sharedData: ArticleViewModel.ArticlesSharedData = viewModel(viewModelStoreOwner = activity)
+            AnimatedContent(
+                targetState = destination,
+                transitionSpec = {
+                    if (initialState is Article || targetState is Article) {
+                        articleContentTransform(sharedData.answerTransitionDirection)
+                    } else {
+                        EnterTransition.None togetherWith ExitTransition.None
                     }
-                    ArticleScreen(
-                        article = destination,
-                        viewModel = viewModel,
-                        innerPadding = innerPadding,
-                        paneNavigator = paneNavigator,
-                    )
-                }
+                },
+                label = "content-list-detail-pane",
+            ) { currentDestination ->
+                when (currentDestination) {
+                    is Article -> {
+                        val viewModel: ArticleViewModel = viewModel(key = "article-${currentDestination.id}") {
+                            ArticleViewModel(currentDestination, activity.httpClient, null)
+                        }
+                        ArticleScreen(
+                            article = currentDestination,
+                            viewModel = viewModel,
+                            innerPadding = innerPadding,
+                            paneNavigator = paneNavigator,
+                        )
+                    }
 
-                is Question -> {
-                    QuestionScreen(
-                        question = destination,
-                    )
-                }
+                    is Question -> {
+                        QuestionScreen(
+                            question = currentDestination,
+                        )
+                    }
 
-                is Pin -> {
-                    PinScreen(
-                        innerPadding = innerPadding,
-                        pin = destination,
-                    )
-                }
+                    is Pin -> {
+                        PinScreen(
+                            innerPadding = innerPadding,
+                            pin = currentDestination,
+                        )
+                    }
 
-                is Person -> {
-                    PeopleScreen(
-                        innerPadding = innerPadding,
-                        person = destination,
-                    )
-                }
+                    is Person -> {
+                        PeopleScreen(
+                            innerPadding = innerPadding,
+                            person = currentDestination,
+                        )
+                    }
 
-                else -> {
-                    ListDetailEmptyPane(
-                        text = "暂不支持在详情窗格中打开该内容",
-                        icon = Icons.AutoMirrored.Outlined.Article,
-                    )
+                    else -> {
+                        ListDetailEmptyPane(
+                            text = "暂不支持在详情窗格中打开该内容",
+                            icon = Icons.AutoMirrored.Outlined.Article,
+                        )
+                    }
                 }
             }
         },

@@ -543,17 +543,10 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             } catch (_: Exception) {
                                 null
                             }
-                            when (sharedData?.answerTransitionDirection) {
-                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_NEXT ->
-                                    slideInVertically(tween(300)) { it } + fadeIn(tween(300))
-                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_PREVIOUS ->
-                                    slideInVertically(tween(300)) { -it } + fadeIn(tween(300))
-                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_NEXT ->
-                                    slideInHorizontally(tween(300)) { it } + fadeIn(tween(300))
-                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_PREVIOUS ->
-                                    slideInHorizontally(tween(300)) { -it } + fadeIn(tween(300))
-                                else -> slideInHorizontally(tween(300)) { it }
-                            }
+                            articleEnterTransition(
+                                sharedData?.answerTransitionDirection
+                                    ?: ArticleViewModel.AnswerTransitionDirection.DEFAULT,
+                            )
                         },
                         exitTransition = {
                             val sharedData = try {
@@ -562,17 +555,10 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             } catch (_: Exception) {
                                 null
                             }
-                            when (sharedData?.answerTransitionDirection) {
-                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_NEXT ->
-                                    slideOutVertically(tween(300)) { -it } + fadeOut(tween(300))
-                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_PREVIOUS ->
-                                    slideOutVertically(tween(300)) { it } + fadeOut(tween(300))
-                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_NEXT ->
-                                    slideOutHorizontally(tween(300)) { -it } + fadeOut(tween(300))
-                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_PREVIOUS ->
-                                    slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300))
-                                else -> ExitTransition.None
-                            }
+                            articleExitTransition(
+                                sharedData?.answerTransitionDirection
+                                    ?: ArticleViewModel.AnswerTransitionDirection.DEFAULT,
+                            )
                         },
                     ) { navEntry ->
                         val article: Article = navEntry.toRoute()
