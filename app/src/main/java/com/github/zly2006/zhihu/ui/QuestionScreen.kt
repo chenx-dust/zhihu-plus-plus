@@ -107,7 +107,7 @@ fun QuestionScreen(
 ) {
     val context = LocalContext.current
     val preferences = context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
-    val viewModel: QuestionFeedViewModel = viewModel(key = "question_${question.questionId}") {
+    val viewModel: QuestionFeedViewModel = viewModel(key = "question-${question.questionId}") {
         QuestionFeedViewModel(question.questionId)
     }
     var questionContent by remember { mutableStateOf("") }
