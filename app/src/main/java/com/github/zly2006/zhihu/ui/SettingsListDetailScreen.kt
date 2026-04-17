@@ -12,8 +12,8 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.github.zly2006.zhihu.Account
-import com.github.zly2006.zhihu.NavDestination
+import com.github.zly2006.zhihu.navigation.Account
+import com.github.zly2006.zhihu.navigation.NavDestination
 import com.github.zly2006.zhihu.ui.subscreens.AppearanceSettingsScreen
 import com.github.zly2006.zhihu.ui.subscreens.BlockedFeedHistoryScreen
 import com.github.zly2006.zhihu.ui.subscreens.ColorSchemeScreen

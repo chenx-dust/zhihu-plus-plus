@@ -8,14 +8,14 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.github.zly2006.zhihu.Article
-import com.github.zly2006.zhihu.ArticleType
 import com.github.zly2006.zhihu.MainActivity
-import com.github.zly2006.zhihu.NavDestination
-import com.github.zly2006.zhihu.Navigator
-import com.github.zly2006.zhihu.Person
-import com.github.zly2006.zhihu.Pin
-import com.github.zly2006.zhihu.Question
+import com.github.zly2006.zhihu.navigation.Article
+import com.github.zly2006.zhihu.navigation.ArticleType
+import com.github.zly2006.zhihu.navigation.NavDestination
+import com.github.zly2006.zhihu.navigation.Navigator
+import com.github.zly2006.zhihu.navigation.Person
+import com.github.zly2006.zhihu.navigation.Pin
+import com.github.zly2006.zhihu.navigation.Question
 import com.github.zly2006.zhihu.viewmodel.ArticleViewModel
 import kotlinx.parcelize.Parcelize
 
@@ -149,7 +149,6 @@ fun ContentListDetailScreen(
                 is Question -> {
                     QuestionScreen(
                         question = destination,
-                        innerPadding = innerPadding,
                     )
                 }
 

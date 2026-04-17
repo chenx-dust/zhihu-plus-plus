@@ -912,10 +912,8 @@ fun ArticleScreen(
             }
         }
     }
-    val showBottomBarSlot = backStackEntry?.hasRoute(Article::class) == true || context !is MainActivity
     val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues()
     val bottomBarObscuredHeightPx by remember(
-        showBottomBarSlot,
         useDuo3ArticleBar,
         showBottomBar,
         bottomBarHeightPx,
@@ -925,9 +923,7 @@ fun ArticleScreen(
             val navBar = density.run {
                 navigationBarsPadding.calculateBottomPadding().toPx().coerceAtLeast(0f)
             }
-            val bottonBar = if (!showBottomBarSlot) {
-                0f
-            } else if (useDuo3ArticleBar) {
+            val bottonBar = if (useDuo3ArticleBar) {
                 (bottomBarHeightPx - bottomBarOffset.value).coerceIn(0f, bottomBarHeightPx)
             } else if (showBottomBar) {
                 bottomBarHeightPx

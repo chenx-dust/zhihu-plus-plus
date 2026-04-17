@@ -532,7 +532,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             val question: Question = navEntry.toRoute()
                             QuestionScreen(
                                 question = question,
-                                innerPadding = PaddingValues(),
                                 selectionState = selectionState,
                             )
                         }
