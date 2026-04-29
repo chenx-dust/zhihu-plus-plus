@@ -281,12 +281,12 @@ fun FeedCard(
                     disabledContainerColor = animatedCardContainerColor,
                     disabledContentColor = defaultCardColors.disabledContentColor,
                 ),
-                shape = if (duo3CardAppearance) RoundedCornerShape(24.dp) else CardDefaults.shape,
+                shape = if (duo3CardAppearance) RoundedCornerShape(16.dp) else CardDefaults.shape,
                 modifier = Modifier
                     .fillMaxWidth()
                     .alpha(1 - min(actionAlpha, 0.5f))
                     .offset(x = with(density) { animatedOffsetX.toDp() })
-                    .let { if (duo3CardAppearance) it.clip(RoundedCornerShape(24.dp)) else it }
+                    .let { if (duo3CardAppearance) it.clip(RoundedCornerShape(16.dp)) else it }
                     .clickable {
                         if (!isDragging && abs(animatedOffsetX) < 10f) {
                             onClick(item)
