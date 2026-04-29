@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.zly2006.zhihu.MainActivity
 import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
+import com.github.zly2006.zhihu.navigation.LocalNavigator
 import com.github.zly2006.zhihu.navigation.NavDestination
 import com.github.zly2006.zhihu.navigation.Navigator
 import com.github.zly2006.zhihu.navigation.Person
@@ -115,6 +116,8 @@ fun ContentListDetailScreen(
     listPane: @Composable (Navigator, ListDetailSelectionState<ContentPaneDestination>) -> Unit,
 ) {
     val activity = androidx.activity.compose.LocalActivity.current as MainActivity
+    val parentNavigator = LocalNavigator.current
+
     BaseListDetailScreen(
         backBehavior = ContentListDetailBackBehavior,
         toPaneDestination = { it.toContentPaneDestination() },
@@ -158,6 +161,7 @@ fun ContentListDetailScreen(
                             article = currentDestination,
                             viewModel = viewModel,
                             paneNavigator = paneNavigator,
+                            parentNavigator = parentNavigator,
                         )
                     }
 
@@ -171,6 +175,7 @@ fun ContentListDetailScreen(
                         PinScreen(
                             innerPadding = innerPadding,
                             pin = currentDestination,
+                            parentNavigator = parentNavigator,
                         )
                     }
 

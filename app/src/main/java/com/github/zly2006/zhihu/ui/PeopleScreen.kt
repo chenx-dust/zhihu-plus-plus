@@ -587,6 +587,7 @@ fun PeopleScreen(
     innerPadding: PaddingValues,
     person: Person,
     testOverrides: PeopleScreenTestOverrides? = null,
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -804,6 +805,12 @@ fun PeopleScreen(
                                     .testTag(PEOPLE_SCREEN_ANSWERS_LIST_TAG),
                                 key = { it.id },
                             ) {
+                                val dest = Article(
+                                    type = ArticleType.Answer,
+                                    id = it.id,
+                                    title = it.question.title,
+                                    excerpt = it.excerpt,
+                                )
                                 FeedCard(
                                     BaseFeedViewModel.FeedDisplayItem(
                                         title = it.question.title,
@@ -811,17 +818,11 @@ fun PeopleScreen(
                                         details = "回答 · ${it.voteupCount} 赞同 · ${it.commentCount} 评论",
                                         feed = null,
                                     ),
+                                    selected = dest.matchesContentSelection(selectionState),
                                     modifier = Modifier.testTag(peopleScreenAnswerItemTag(it.id)),
                                     horizontalPadding = 4.dp,
                                 ) {
-                                    navigator.onNavigate(
-                                        Article(
-                                            type = ArticleType.Answer,
-                                            id = it.id,
-                                            title = it.question.title,
-                                            excerpt = it.excerpt,
-                                        ),
-                                    )
+                                    navigator.onNavigate(dest)
                                 }
                             }
                         }
@@ -854,6 +855,12 @@ fun PeopleScreen(
                                     .testTag(PEOPLE_SCREEN_ARTICLES_LIST_TAG),
                                 key = { it.id },
                             ) {
+                                val dest = Article(
+                                    type = ArticleType.Article,
+                                    id = it.id,
+                                    title = it.title,
+                                    excerpt = it.excerpt,
+                                )
                                 FeedCard(
                                     BaseFeedViewModel.FeedDisplayItem(
                                         title = it.title,
@@ -861,17 +868,11 @@ fun PeopleScreen(
                                         details = "文章 · ${it.voteupCount} 赞同 · ${it.commentCount} 评论",
                                         feed = null,
                                     ),
+                                    selected = dest.matchesContentSelection(selectionState),
                                     modifier = Modifier.testTag(peopleScreenArticleItemTag(it.id)),
                                     horizontalPadding = 4.dp,
                                 ) {
-                                    navigator.onNavigate(
-                                        Article(
-                                            type = ArticleType.Article,
-                                            id = it.id,
-                                            title = it.title,
-                                            excerpt = it.excerpt,
-                                        ),
-                                    )
+                                    navigator.onNavigate(dest)
                                 }
                             }
                         }
@@ -894,6 +895,7 @@ fun PeopleScreen(
                         ) {
                             FeedCard(
                                 it,
+                                selected = it.navDestination.matchesContentSelection(selectionState),
                                 modifier = Modifier.testTag("people_screen_activity_item_${it.localFeedId ?: it.title}"),
                                 horizontalPadding = 4.dp,
                             )
@@ -938,11 +940,24 @@ fun PeopleScreen(
                                 .fillMaxSize()
                                 .testTag(PEOPLE_SCREEN_QUESTIONS_LIST_TAG),
                             key = { it.id },
-                        ) { question ->
-                            QuestionListItem(
-                                question = question,
-                                itemTag = peopleScreenQuestionItemTag(question.id),
+                        ) {
+                            val dest = Question(
+                                questionId = it.id,
+                                title = it.title,
                             )
+                            FeedCard(
+                                BaseFeedViewModel.FeedDisplayItem(
+                                    title = it.title,
+                                    summary = it.detail,
+                                    details = "${it.answerCount} 回答 · ${it.followerCount} 关注",
+                                    feed = null,
+                                ),
+                                selected = dest.matchesContentSelection(selectionState),
+                                modifier = Modifier.testTag(peopleScreenQuestionItemTag(it.id)),
+                                horizontalPadding = 4.dp,
+                            ) {
+                                navigator.onNavigate(dest)
+                            }
                         }
                     }
 
@@ -961,11 +976,23 @@ fun PeopleScreen(
                                 .fillMaxSize()
                                 .testTag(PEOPLE_SCREEN_PINS_LIST_TAG),
                             key = { it.id },
-                        ) { pin ->
-                            PinListItem(
-                                pin = pin,
-                                itemTag = peopleScreenPinItemTag(pin.id),
+                        ) {
+                            val dest = Pin(
+                                id = it.id.toLong(),
                             )
+                            FeedCard(
+                                BaseFeedViewModel.FeedDisplayItem(
+                                    title = "",
+                                    summary = it.excerptTitle,
+                                    details = "${it.likeCount} 赞 · ${it.commentCount} 评论",
+                                    feed = null,
+                                ),
+                                selected = dest.matchesContentSelection(selectionState),
+                                modifier = Modifier.testTag(peopleScreenPinItemTag(it.id)),
+                                horizontalPadding = 4.dp,
+                            ) {
+                                navigator.onNavigate(dest)
+                            }
                         }
                     }
 
@@ -1071,63 +1098,6 @@ private fun CollectionListItem(
         )
         Text(
             text = "${collection.answerCount} 内容 · ${collection.followerCount} 关注",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun QuestionListItem(
-    question: DataHolder.Question,
-    itemTag: String? = null,
-) {
-    val navigator = LocalNavigator.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (itemTag != null) Modifier.testTag(itemTag) else Modifier)
-            .clickable {
-                navigator.onNavigate(Question(question.id, question.title))
-            }.padding(vertical = 8.dp, horizontal = 4.dp),
-    ) {
-        Text(
-            text = question.title,
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Text(
-            text = "${question.answerCount} 回答 · ${question.followerCount} 关注",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun PinListItem(
-    pin: DataHolder.Pin,
-    itemTag: String? = null,
-) {
-    val navigator = LocalNavigator.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (itemTag != null) Modifier.testTag(itemTag) else Modifier)
-            .clickable {
-                navigator.onNavigate(Pin(pin.id.toLong()))
-            }.padding(vertical = 8.dp, horizontal = 4.dp),
-    ) {
-        val text = remember { Jsoup.parse(pin.excerptTitle).text() }
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = "${pin.likeCount} 赞 · ${pin.commentCount} 评论",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp),

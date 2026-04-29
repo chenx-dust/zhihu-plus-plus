@@ -709,11 +709,12 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                         ContentListDetailScreen(
                             innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
-                        ) { _, _ ->
+                        ) { _, selectionState ->
                             val person: Person = navEntry.toRoute()
                             PeopleScreen(
-                                innerPadding,
-                                person,
+                                innerPadding = innerPadding,
+                                person = person,
+                                selectionState = selectionState,
                             )
                         }
                     }

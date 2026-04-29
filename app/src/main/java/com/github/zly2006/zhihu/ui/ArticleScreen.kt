@@ -143,6 +143,7 @@ import com.github.zly2006.zhihu.markdown.RenderVideoBox
 import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
 import com.github.zly2006.zhihu.navigation.LocalNavigator
+import com.github.zly2006.zhihu.navigation.Navigator
 import com.github.zly2006.zhihu.navigation.Question
 import com.github.zly2006.zhihu.theme.ThemeManager
 import com.github.zly2006.zhihu.ui.components.AnswerHorizontalOverscroll
@@ -630,6 +631,7 @@ fun ArticleScreen(
     article: Article,
     viewModel: ArticleViewModel,
     paneNavigator: ThreePaneScaffoldNavigator<ContentPaneDestination>? = null,
+    parentNavigator: Navigator = LocalNavigator.current,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -1095,7 +1097,7 @@ fun ArticleScreen(
                                     .let {
                                         if (article.type == ArticleType.Answer) {
                                             it.clickable {
-                                                navigator.onNavigate(Question(viewModel.questionId, viewModel.title))
+                                                parentNavigator.onNavigate(Question(viewModel.questionId, viewModel.title))
                                             }
                                         } else {
                                             it
@@ -1113,7 +1115,7 @@ fun ArticleScreen(
                                     .padding(end = 16.dp)
                                     .fillMaxWidth()
                                     .clickable {
-                                        navigator.onNavigate(
+                                        parentNavigator.onNavigate(
                                             com.github.zly2006.zhihu.navigation.Person(
                                                 id = viewModel.authorId,
                                                 urlToken = viewModel.authorUrlToken,

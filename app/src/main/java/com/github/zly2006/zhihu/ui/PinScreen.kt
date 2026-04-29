@@ -77,6 +77,7 @@ import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
 import com.github.zly2006.zhihu.navigation.LocalNavigator
 import com.github.zly2006.zhihu.navigation.NavDestination
+import com.github.zly2006.zhihu.navigation.Navigator
 import com.github.zly2006.zhihu.navigation.Person
 import com.github.zly2006.zhihu.navigation.Pin
 import com.github.zly2006.zhihu.navigation.Question
@@ -139,6 +140,7 @@ fun PinScreen(
     innerPadding: PaddingValues,
     pin: Pin,
     testOverrides: PinScreenTestOverrides? = null,
+    parentNavigator: Navigator = LocalNavigator.current,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -255,6 +257,7 @@ fun PinScreen(
                             showComments = true
                         },
                         linkCardPreviewOverride = testOverrides?.linkCardPreview,
+                        parentNavigator = parentNavigator,
                     )
 
                     if (testOverrides?.commentScreenContent != null) {
@@ -304,6 +307,7 @@ private fun PinContent(
     onLikeClick: () -> Unit,
     onCommentClick: () -> Unit,
     linkCardPreviewOverride: PinLinkCardPreview? = null,
+    parentNavigator: Navigator = LocalNavigator.current,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -324,7 +328,7 @@ private fun PinContent(
                 .fillMaxWidth()
                 .testTag(PIN_SCREEN_AUTHOR_TAG)
                 .clickable {
-                    navigator.onNavigate(
+                    parentNavigator.onNavigate(
                         Person(
                             id = pin.author.id,
                             urlToken = pin.author.urlToken,
