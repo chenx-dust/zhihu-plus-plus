@@ -65,6 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -85,6 +86,11 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+internal const val DEVELOPER_SETTINGS_BACK_BUTTON_TAG = "developerSettings/backButton"
+internal const val DEVELOPER_SETTINGS_MODE_TAG = "developerSettings/modeToggle"
+internal const val DEVELOPER_SETTINGS_SENTENCE_SIMILARITY_TAG = "developerSettings/sentenceSimilarity"
+internal const val DEVELOPER_SETTINGS_COLOR_SCHEME_TAG = "developerSettings/colorScheme"
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DeveloperSettingsScreen(
@@ -102,6 +108,9 @@ fun DeveloperSettingsScreen(
     val dataState by AccountData.asState()
     val data = dataState
     val mainActivity = context as? MainActivity
+    var developerModeEnabled by remember {
+        mutableStateOf(preferences.getBoolean("developer", false))
+    }
     val continuousUsageDurationMs by produceState(
         initialValue = mainActivity?.currentContinuousUsageDurationMs() ?: 0L,
         key1 = mainActivity,
@@ -124,6 +133,7 @@ fun DeveloperSettingsScreen(
                 title = { Text("开发者选项") },
                 navigationIcon = {
                     IconButton(
+                        modifier = Modifier.testTag(DEVELOPER_SETTINGS_BACK_BUTTON_TAG),
                         onClick = navigator.onNavigateBack,
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -148,9 +158,11 @@ fun DeveloperSettingsScreen(
                 .padding(16.dp),
         ) {
             SettingItemOverall(
+                modifier = Modifier.testTag(DEVELOPER_SETTINGS_MODE_TAG),
                 title = { Text("开发者模式") },
-                checked = preferences.getBoolean("developer", false),
+                checked = developerModeEnabled,
                 onCheckedChange = {
+                    developerModeEnabled = it
                     preferences.edit {
                         putBoolean("developer", it)
                     }
@@ -215,13 +227,19 @@ fun DeveloperSettingsScreen(
 
                 Button(onClick = { showSignedRequestDialog = true }) { Text("签名请求") }
 
-                Button(onClick = {
-                    navigator.onNavigate(SentenceSimilarityTest)
-                }) { Text("句子相似度") }
+                Button(
+                    modifier = Modifier.testTag(DEVELOPER_SETTINGS_SENTENCE_SIMILARITY_TAG),
+                    onClick = {
+                        navigator.onNavigate(SentenceSimilarityTest)
+                    },
+                ) { Text("句子相似度") }
 
-                Button(onClick = {
-                    navigator.onNavigate(Account.DeveloperSettings.ColorScheme)
-                }) { Text("Color Scheme") }
+                Button(
+                    modifier = Modifier.testTag(DEVELOPER_SETTINGS_COLOR_SCHEME_TAG),
+                    onClick = {
+                        navigator.onNavigate(Account.DeveloperSettings.ColorScheme)
+                    },
+                ) { Text("Color Scheme") }
             }
 
             // TTS引擎信息显示

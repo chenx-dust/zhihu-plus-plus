@@ -302,7 +302,7 @@ class MainActivity : ComponentActivity() {
                             Log.i(TAG, "Using Pico TTS engine")
                             ttsState = TtsState.Ready
                         } else {
-                            Log.e(TAG, "Pico TTS engine Initialization failed")
+                            Log.w(TAG, "Pico TTS engine unavailable on this device")
                             ttsState = TtsState.Error
                         }
                     }, picoEngine)
@@ -317,7 +317,7 @@ class MainActivity : ComponentActivity() {
                             Log.i(TAG, "Using Sherpa TTS engine")
                             ttsState = TtsState.Ready
                         } else {
-                            Log.e(TAG, "Sherpa TTS engine Initialization failed")
+                            Log.w(TAG, "Sherpa TTS engine unavailable on this device")
                             ttsState = TtsState.Error
                         }
                     }, sherpaEngine)
@@ -328,7 +328,7 @@ class MainActivity : ComponentActivity() {
                     ttsEngine = TtsEngine.Google
                 }
             } else {
-                Log.e(TAG, "TTS Initialization failed")
+                Log.w(TAG, "TTS unavailable on this device")
                 ttsState = TtsState.Error
             }
         }
@@ -365,7 +365,7 @@ class MainActivity : ComponentActivity() {
             // 如果中文不支持，尝试英文
             val englishResult = textToSpeech?.setLanguage(Locale.ENGLISH)
             if (englishResult == TextToSpeech.LANG_MISSING_DATA || englishResult == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "Language not supported")
+                Log.w(TAG, "TTS language not supported on this device")
                 ttsState = TtsState.Error
             } else {
                 Log.i(TAG, "Using English language for TTS")
@@ -396,7 +396,7 @@ class MainActivity : ComponentActivity() {
             if (intent.data != null) {
                 if (intent.data!!.authority != "zhihu-plus.internal") {
                     Log.i(TAG, "Intent data: ${intent.data}")
-                    val destination = resolveContent(intent.data!!)
+                    val destination = resolveContent(intent.data.toString())
                     if (destination != null) {
                         if (destination != sharedData.clipboardDestination) {
                             sharedData.clipboardDestination = destination
@@ -422,7 +422,7 @@ class MainActivity : ComponentActivity() {
                     if (text != null) {
                         val regex = Regex("""https?://[-a-zA-Z0-9@:%_+.~#?&/=]*""")
                         val destination = regex.findAll(text).firstNotNullOfOrNull {
-                            resolveContent(it.value.toUri())
+                            resolveContent(it.value)
                         }
                         if (destination != null && destination != sharedData.clipboardDestination) {
                             sharedData.clipboardDestination = destination

@@ -74,6 +74,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import coil3.compose.AsyncImage
@@ -119,6 +120,12 @@ const val PREFERENCE_NAME = "com.github.zly2006.zhihu_preferences"
 const val ARTICLE_USE_WEBVIEW_PREFERENCE_KEY = "webviewRender"
 const val ARTICLE_WEBVIEW_CHANGE_ANNOUNCEMENT_DISMISSED_PREFERENCE_KEY =
     "articleWebviewChangeAnnouncementDismissed"
+const val HOME_TOP_ACTIONS_TAG = "home_top_actions"
+const val HOME_SEARCH_BUTTON_TAG = "home_search_button"
+const val HOME_NOTIFICATION_BUTTON_TAG = "home_notification_button"
+const val HOME_ACCOUNT_BUTTON_TAG = "home_account_button"
+const val HOME_FEED_LIST_TAG = "home_feed_list"
+const val HOME_REFRESH_BUTTON_TAG = "home_refresh_button"
 
 interface IHomeFeedViewModel {
     suspend fun recordContentInteraction(context: Context, feed: Feed)
@@ -324,6 +331,7 @@ fun HomeScreen(
                     ) { }
                     Row(
                         modifier = Modifier
+                            .testTag(HOME_TOP_ACTIONS_TAG)
                             .fillMaxWidth()
                             .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
                             .padding(LocalCardHorizontalPadding.current, 8.dp, LocalCardHorizontalPadding.current, 0.dp),
@@ -332,7 +340,8 @@ fun HomeScreen(
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(64.dp),
+                                .height(64.dp)
+                                .testTag(HOME_SEARCH_BUTTON_TAG),
                             shape = RoundedCornerShape(32.dp),
                             color = MaterialTheme.colorScheme.surfaceContainerHighest,
                             onClick = {
@@ -362,7 +371,9 @@ fun HomeScreen(
 
                                 IconButton(
                                     onClick = { showAccountBottomSheet = true },
-                                    modifier = Modifier.size(64.dp),
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .testTag(HOME_ACCOUNT_BUTTON_TAG),
                                 ) {
                                     Box(Modifier.padding(12.dp)) {
                                         BadgedBox(
@@ -402,6 +413,7 @@ fun HomeScreen(
                 Surface {
                     Row(
                         modifier = Modifier
+                            .testTag(HOME_TOP_ACTIONS_TAG)
                             .fillMaxWidth()
                             .padding(horizontal = LocalCardHorizontalPadding.current, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -409,7 +421,8 @@ fun HomeScreen(
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(36.dp),
+                                .height(36.dp)
+                                .testTag(HOME_SEARCH_BUTTON_TAG),
                             shape = RoundedCornerShape(24.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             onClick = {
@@ -447,7 +460,10 @@ fun HomeScreen(
                                 }
                             },
                         ) {
-                            IconButton(onClick = { navigator.onNavigate(Notification) }) {
+                            IconButton(
+                                onClick = { navigator.onNavigate(Notification) },
+                                modifier = Modifier.testTag(HOME_NOTIFICATION_BUTTON_TAG),
+                            ) {
                                 Icon(
                                     Icons.Default.Notifications,
                                     contentDescription = "通知",
@@ -476,6 +492,7 @@ fun HomeScreen(
             PaginatedList(
                 items = viewModel.displayItems,
                 listState = listState,
+                modifier = Modifier.testTag(HOME_FEED_LIST_TAG),
                 contentPadding = PaddingValues(
                     top = scaffoldPadding.calculateTopPadding() + 8.dp,
                     bottom = innerPadding.calculateBottomPadding(),
@@ -614,6 +631,7 @@ fun HomeScreen(
                     }
                 }
                 DraggableRefreshButton(
+                    modifier = Modifier.testTag(HOME_REFRESH_BUTTON_TAG),
                     onClick = { viewModel.refresh(context) },
                 ) {
                     if (viewModel.isLoading) {

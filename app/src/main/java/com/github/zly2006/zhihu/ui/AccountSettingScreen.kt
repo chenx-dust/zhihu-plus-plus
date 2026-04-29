@@ -80,6 +80,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -111,6 +112,19 @@ import com.github.zly2006.zhihu.util.signFetchRequest
 import io.ktor.http.Url
 import kotlinx.coroutines.DelicateCoroutinesApi
 
+internal const val ACCOUNT_SETTINGS_SCROLL_TAG = "accountSettings.scroll"
+internal const val ACCOUNT_SETTINGS_LOGIN_ITEM_TAG = "accountSettings.loginItem"
+internal const val ACCOUNT_SETTINGS_PROFILE_HEADER_TAG = "accountSettings.profileHeader"
+internal const val ACCOUNT_SETTINGS_PROFILE_NAME_TAG = "accountSettings.profileName"
+internal const val ACCOUNT_SETTINGS_SHORTCUT_COLLECTIONS_TAG = "accountSettings.shortcutCollections"
+internal const val ACCOUNT_SETTINGS_SHORTCUT_NOTIFICATION_TAG = "accountSettings.shortcutNotification"
+internal const val ACCOUNT_SETTINGS_SHORTCUT_HISTORY_TAG = "accountSettings.shortcutHistory"
+internal const val ACCOUNT_SETTINGS_APPEARANCE_TAG = "accountSettings.appearance"
+internal const val ACCOUNT_SETTINGS_RECOMMEND_TAG = "accountSettings.recommend"
+internal const val ACCOUNT_SETTINGS_SYSTEM_TAG = "accountSettings.system"
+internal const val ACCOUNT_SETTINGS_DEVELOPER_TAG = "accountSettings.developer"
+internal const val ACCOUNT_SETTINGS_LICENSES_TAG = "accountSettings.licenses"
+
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun AccountSettingScreen(
@@ -118,6 +132,8 @@ fun AccountSettingScreen(
     unreadCount: Int = 0,
     selectedSettingType: String? = null,
     onDismissRequest: () -> Unit = {},
+    refreshAccountProfileOnEnter: Boolean = true,
+    testAccountData: AccountData.Data? = null,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -148,7 +164,8 @@ fun AccountSettingScreen(
             putBoolean("developer", isDeveloper)
         }
     }
-    val data by AccountData.asState()
+    val liveData by AccountData.asState()
+    val data = testAccountData ?: liveData
 
     fun isSelected(type: SettingsPaneDestination.Type) =
         selectedSettingType == type.name
@@ -186,12 +203,12 @@ fun AccountSettingScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .testTag(ACCOUNT_SETTINGS_SCROLL_TAG)
                 .verticalScroll(rememberScrollState())
                 .padding(padding),
         ) {
-            LaunchedEffect(Unit) {
-                val data = AccountData.data
-                if (data.login) {
+            LaunchedEffect(data.login, refreshAccountProfileOnEnter) {
+                if (refreshAccountProfileOnEnter && data.login) {
                     try {
                         val response = AccountData.fetchGet(context, "https://www.zhihu.com/api/v4/me") {
                             signFetchRequest()
@@ -210,7 +227,10 @@ fun AccountSettingScreen(
 
             if (data.login) {
                 Row(
-                    Modifier.padding(LocalCardHorizontalPadding.current, innerPadding.calculateTopPadding(), LocalCardHorizontalPadding.current, 16.dp).clickable {
+                    Modifier
+                        .testTag(ACCOUNT_SETTINGS_PROFILE_HEADER_TAG)
+                        .padding(LocalCardHorizontalPadding.current, innerPadding.calculateTopPadding(), LocalCardHorizontalPadding.current, 16.dp)
+                        .clickable {
                         navigator.onNavigate(
                             Person(
                                 id = data.self?.id ?: "",
@@ -233,6 +253,7 @@ fun AccountSettingScreen(
                     Text(
                         text = data.username,
                         style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.testTag(ACCOUNT_SETTINGS_PROFILE_NAME_TAG),
                     )
                     Spacer(Modifier.weight(1f))
                     val scanActivityLauncher = rememberLauncherForActivityResult(
@@ -288,6 +309,7 @@ fun AccountSettingScreen(
                     SettingItem(
                         title = { Text("登录知乎") },
                         icon = { Icon(Icons.AutoMirrored.Filled.Login, null) },
+                        modifier = Modifier.testTag(ACCOUNT_SETTINGS_LOGIN_ITEM_TAG),
                         onClick = {
                             context.startActivity(Intent(context, LoginActivity::class.java))
                         },
@@ -306,11 +328,12 @@ fun AccountSettingScreen(
                     if (data.login) {
                         Column(
                             Modifier
+                                .testTag(ACCOUNT_SETTINGS_SHORTCUT_COLLECTIONS_TAG)
                                 .weight(1f)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(MaterialTheme.colorScheme.primaryContainer)
                                 .clickable {
-                                    navigator.onNavigate(Collections(AccountData.data.self!!.urlToken!!))
+                                    data.self?.urlToken?.let { navigator.onNavigate(Collections(it)) }
                                 }.padding(8.dp, 16.dp),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -329,6 +352,7 @@ fun AccountSettingScreen(
                         }
                         Column(
                             Modifier
+                                .testTag(ACCOUNT_SETTINGS_SHORTCUT_NOTIFICATION_TAG)
                                 .weight(1f)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(MaterialTheme.colorScheme.primaryContainer)
@@ -362,6 +386,7 @@ fun AccountSettingScreen(
                         if (shouldShowAccountHistoryShortcut(useDuo3HomeAccount, selectedBottomBarItemKeys)) {
                             Column(
                                 Modifier
+                                    .testTag(ACCOUNT_SETTINGS_SHORTCUT_HISTORY_TAG)
                                     .weight(1f)
                                     .clip(RoundedCornerShape(4.dp))
                                     .background(MaterialTheme.colorScheme.primaryContainer)
@@ -394,7 +419,9 @@ fun AccountSettingScreen(
                         SettingItem(
                             title = { Text("查看收藏夹") },
                             icon = { Icon(Icons.Default.BookmarkBorder, null) },
-                            onClick = { navigator.onNavigate(Collections(AccountData.data.self!!.urlToken!!)) },
+                            onClick = {
+                                data.self?.urlToken?.let { navigator.onNavigate(Collections(it)) }
+                            },
                         )
                     }
                 }
@@ -405,6 +432,7 @@ fun AccountSettingScreen(
                     title = { Text("外观与阅读体验") },
                     description = { Text("主题颜色、字体大小等") },
                     icon = { Icon(Icons.Default.Palette, null) },
+                    modifier = Modifier.testTag(ACCOUNT_SETTINGS_APPEARANCE_TAG),
                     onClick = { navigator.onNavigate(Account.AppearanceSettings()) },
                     colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Appearance)),
                 )
@@ -413,6 +441,7 @@ fun AccountSettingScreen(
                     title = { Text("推荐系统与内容过滤") },
                     description = { Text("推荐、智能过滤、关键词屏蔽等") },
                     icon = { Icon(Icons.Default.FilterAlt, null) },
+                    modifier = Modifier.testTag(ACCOUNT_SETTINGS_RECOMMEND_TAG),
                     onClick = { navigator.onNavigate(Account.RecommendSettings()) },
                     colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Recommend)),
                 )
@@ -421,6 +450,7 @@ fun AccountSettingScreen(
                     title = { Text("系统与更新") },
                     description = { Text("GitHub、更新设置等") },
                     icon = { Icon(Icons.Default.Settings, null) },
+                    modifier = Modifier.testTag(ACCOUNT_SETTINGS_SYSTEM_TAG),
                     onClick = { navigator.onNavigate(Account.SystemAndUpdateSettings) },
                     colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.SystemAndUpdate)),
                 )
@@ -429,6 +459,7 @@ fun AccountSettingScreen(
                     SettingItem(
                         title = { Text("开发者选项") },
                         icon = { Icon(Icons.Default.Code, null) },
+                        modifier = Modifier.testTag(ACCOUNT_SETTINGS_DEVELOPER_TAG),
                         onClick = { navigator.onNavigate(Account.DeveloperSettings) },
                         colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Developer)),
                     )
@@ -518,6 +549,7 @@ fun AccountSettingScreen(
                     title = { Text("开源许可") },
                     description = { Text("查看第三方组件许可证") },
                     icon = { Icon(painterResource(R.drawable.ic_license_24dp), null) },
+                    modifier = Modifier.testTag(ACCOUNT_SETTINGS_LICENSES_TAG),
                     onClick = { navigator.onNavigate(Account.OpenSourceLicenses) },
                 )
             }

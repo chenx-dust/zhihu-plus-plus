@@ -97,6 +97,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
@@ -127,6 +128,7 @@ class ArticleViewModel(
     var authorBio by mutableStateOf("")
     var authorAvatarSrc by mutableStateOf("")
     var content by mutableStateOf("")
+    var attachment by mutableStateOf<JsonElement?>(null)
     var voteUpCount by mutableIntStateOf(0)
     var commentCount by mutableIntStateOf(0)
     var voteUpState by mutableStateOf(VoteUpState.Neutral)
@@ -157,6 +159,9 @@ class ArticleViewModel(
         content = content,
         voteUpCount = voteUpCount,
         commentCount = commentCount,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        ipInfo = ipInfo,
         sourceLabel = sourceLabel,
     )
 
@@ -215,6 +220,9 @@ class ArticleViewModel(
         val content: String,
         val voteUpCount: Int,
         val commentCount: Int,
+        val createdAt: Long = 0L,
+        val updatedAt: Long = 0L,
+        val ipInfo: String? = null,
         /** 来源标签，用于 UI 显示，例如 "此问题"、"「收藏夹名称」" */
         val sourceLabel: String = "此问题",
     )
@@ -371,6 +379,7 @@ class ArticleViewModel(
                             authorId = answer.author.id
                             authorUrlToken = answer.author.urlToken
                             content = answer.content
+                            attachment = answer.attachment
                             authorBio = answer.author.headline
                             authorAvatarSrc = answer.author.avatarUrl
                             voteUpCount = answer.voteupCount
@@ -689,7 +698,6 @@ class ArticleViewModel(
     }
 
     fun toggleVoteUp(context: Context, newState: VoteUpState) {
-        if (httpClient == null) return
         viewModelScope.launch {
             try {
                 val endpoint = when (article.type) {

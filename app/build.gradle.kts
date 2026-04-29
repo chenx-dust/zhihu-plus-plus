@@ -1,6 +1,8 @@
 @file:OptIn(ExperimentalEncodingApi::class)
 
 import buildlogic.gitHash
+import org.gradle.api.tasks.testing.Test
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -44,7 +46,7 @@ android {
         versionCode = property("app.versionCode").toString().toIntOrNull() ?: 1
         versionName = property("app.versionName").toString()
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.github.zly2006.zhihu.ZhihuInstrumentedTestRunner"
     }
 
     flavorDimensions += "version"
@@ -65,6 +67,8 @@ android {
         @Suppress("UnstableApiUsage")
         localeFilters += listOf("en", "zh")
     }
+
+    sourceSets.getByName("androidTest").assets.srcDir(layout.buildDirectory.dir("generated/androidTestSecrets"))
 
     testOptions {
         unitTests {
@@ -147,8 +151,41 @@ android {
     }
 }
 
+val generatedAndroidTestSecretsDir = layout.buildDirectory.dir("generated/androidTestSecrets")
+
+val prepareAndroidTestSecretAccount by tasks.registering {
+    val secretAccountFile = rootProject.file(".secret/account.json")
+    outputs.dir(generatedAndroidTestSecretsDir)
+    doLast {
+        val outputDir = generatedAndroidTestSecretsDir.get().asFile
+        delete(outputDir)
+        if (secretAccountFile.exists()) {
+            copy {
+                from(secretAccountFile)
+                into(outputDir.resolve("secret"))
+                rename { "account.json" }
+            }
+        }
+    }
+}
+
+tasks
+    .matching {
+        it.name.startsWith("merge") && it.name.contains("AndroidTestAssets")
+    }.configureEach {
+        dependsOn(prepareAndroidTestSecretAccount)
+    }
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions.freeCompilerArgs.add("-Xdebug")
+}
+
+tasks.withType<Test>().configureEach {
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        },
+    )
 }
 
 val ktor = "3.4.1"
@@ -167,8 +204,8 @@ dependencies {
     //noinspection GradleDependency
     implementation("androidx.browser:browser:1.8.0")
 
-    implementation("io.github.huarangmeng:markdown-parser-android:1.1.6")
-    implementation("io.github.huarangmeng:markdown-renderer-android:1.1.6")
+    implementation("io.github.zly2006:markdown-parser-android:0.0.1-alpha.4")
+    implementation("io.github.zly2006:markdown-renderer-android:0.0.1-alpha.4")
 
     implementation("io.coil-kt.coil3:coil-compose:$coil")
     implementation("io.coil-kt.coil3:coil-network-ktor3-android:$coil")
@@ -238,4 +275,5 @@ dependencies {
     //noinspection GradleDependency
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("io.ktor:ktor-client-mock:$ktor")
 }

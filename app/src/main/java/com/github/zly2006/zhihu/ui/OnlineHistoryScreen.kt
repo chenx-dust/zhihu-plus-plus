@@ -18,6 +18,7 @@
 package com.github.zly2006.zhihu.ui
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.zly2006.zhihu.MainActivity
 import com.github.zly2006.zhihu.data.AccountData
@@ -59,6 +61,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+
+internal const val ONLINE_HISTORY_OVERFLOW_TAG = "online_history_overflow"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +89,11 @@ fun OnlineHistoryScreen(
                 title = { Text("历史记录") },
                 actions = {
                     var showActionsMenu by remember { mutableStateOf(false) }
+                    BackHandler(enabled = showActionsMenu) {
+                        showActionsMenu = false
+                    }
                     IconButton(
+                        modifier = Modifier.testTag(ONLINE_HISTORY_OVERFLOW_TAG),
                         onClick = { showActionsMenu = true },
                     ) {
                         Icon(
@@ -153,7 +161,9 @@ fun OnlineHistoryScreen(
         }
         FeedPullToRefresh(viewModel, padding = innerPadding) {
             PaginatedList(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("online_history_list"),
                 contentPadding = innerPadding,
                 items = viewModel.displayItems,
                 onLoadMore = { viewModel.loadMore(context) },

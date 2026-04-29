@@ -63,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -94,30 +95,84 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+const val PIN_SCREEN_BACK_BUTTON_TAG = "pin_screen_back_button"
+const val PIN_SCREEN_SHARE_BUTTON_TAG = "pin_screen_share_button"
+const val PIN_SCREEN_LOADING_TAG = "pin_screen_loading"
+const val PIN_SCREEN_ERROR_TAG = "pin_screen_error"
+const val PIN_SCREEN_SCROLL_TAG = "pin_screen_scroll"
+const val PIN_SCREEN_AUTHOR_TAG = "pin_screen_author"
+const val PIN_SCREEN_LINK_CARD_TAG = "pin_screen_link_card"
+const val PIN_SCREEN_LIKE_BUTTON_TAG = "pin_screen_like_button"
+const val PIN_SCREEN_COMMENT_BUTTON_TAG = "pin_screen_comment_button"
+
+data class PinScreenUiState(
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val pinContent: DataHolder.Pin? = null,
+    val isLiked: Boolean = false,
+    val likeCount: Int = 0,
+)
+
+data class PinLinkCardPreview(
+    val title: String,
+    val preview: String,
+)
+
+data class PinScreenTestOverrides(
+    val state: PinScreenUiState,
+    val onLikeClick: (() -> Unit)? = null,
+    val onShareAction: ((showShareDialog: () -> Unit) -> Unit)? = null,
+    val linkCardPreview: PinLinkCardPreview? = null,
+    val commentScreenContent: (@Composable (showComments: Boolean, onDismiss: () -> Unit, content: Pin) -> Unit)? = null,
+    val shareDialogContent: (
+        @Composable (
+            showDialog: Boolean,
+            onDismissRequest: () -> Unit,
+            content: Pin,
+            shareText: String,
+        ) -> Unit
+    )? = null,
+)
+
 @Composable
 fun PinScreen(
     innerPadding: PaddingValues,
     pin: Pin,
+    testOverrides: PinScreenTestOverrides? = null,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val httpClient = remember { AccountData.httpClient(context) }
 
-    val viewModel = viewModel<PinViewModel>(
-        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return PinViewModel(pin, httpClient) as T
-            }
-        },
-    )
-
-    LaunchedEffect(pin.id) {
-        viewModel.loadPinDetail(context)
-        AccountData.addReadHistory(context, pin.id.toString(), "pin")
+    val viewModel = if (testOverrides == null) {
+        viewModel<PinViewModel>(
+            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return PinViewModel(pin, httpClient) as T
+                }
+            },
+        )
+    } else {
+        null
     }
 
+    LaunchedEffect(pin.id, testOverrides) {
+        if (testOverrides == null) {
+            viewModel?.loadPinDetail(context)
+            AccountData.addReadHistory(context, pin.id.toString(), "pin")
+        }
+    }
+
+    val screenState = testOverrides?.state ?: PinScreenUiState(
+        isLoading = viewModel?.isLoading ?: false,
+        errorMessage = viewModel?.errorMessage,
+        pinContent = viewModel?.pinContent,
+        isLiked = viewModel?.isLiked ?: false,
+        likeCount = viewModel?.likeCount ?: 0,
+    )
     var showShareDialog by remember { mutableStateOf(false) }
+    var showComments by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
@@ -130,7 +185,10 @@ fun PinScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = navigator.onNavigateBack) {
+                IconButton(
+                    onClick = navigator.onNavigateBack,
+                    modifier = Modifier.testTag(PIN_SCREEN_BACK_BUTTON_TAG),
+                ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
                 Text(
@@ -142,11 +200,13 @@ fun PinScreen(
                     onClick = {
                         val shareText = getShareText(pin)
                         if (shareText != null) {
-                            handleShareAction(context, pin) {
-                                showShareDialog = true
-                            }
+                            testOverrides?.onShareAction?.invoke { showShareDialog = true }
+                                ?: handleShareAction(context, pin) {
+                                    showShareDialog = true
+                                }
                         }
                     },
+                    modifier = Modifier.testTag(PIN_SCREEN_SHARE_BUTTON_TAG),
                 ) {
                     Icon(Icons.Default.Share, contentDescription = "分享")
                 }
@@ -159,44 +219,51 @@ fun PinScreen(
                 .padding(top = innerPadding.calculateTopPadding()),
         ) {
             when {
-                viewModel.isLoading -> {
+                screenState.isLoading -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag(PIN_SCREEN_LOADING_TAG),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
                     }
                 }
 
-                viewModel.errorMessage != null -> {
+                screenState.errorMessage != null -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "加载失败: ${viewModel.errorMessage}",
+                            "加载失败: ${screenState.errorMessage}",
                             color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.testTag(PIN_SCREEN_ERROR_TAG),
                         )
                     }
                 }
 
-                viewModel.pinContent != null -> {
-                    var showComments by remember { mutableStateOf(false) }
-
+                screenState.pinContent != null -> {
                     PinContent(
-                        pin = viewModel.pinContent!!,
-                        isLiked = viewModel.isLiked,
-                        likeCount = viewModel.likeCount,
+                        pin = screenState.pinContent,
+                        isLiked = screenState.isLiked,
+                        likeCount = screenState.likeCount,
                         onLikeClick = {
-                            viewModel.toggleLike(context)
+                            testOverrides?.onLikeClick?.invoke() ?: viewModel?.toggleLike(context)
                         },
                         onCommentClick = {
                             showComments = true
                         },
+                        linkCardPreviewOverride = testOverrides?.linkCardPreview,
                     )
 
-                    // Comment sheet component
-                    if (showComments) {
+                    if (testOverrides?.commentScreenContent != null) {
+                        testOverrides.commentScreenContent.invoke(
+                            showComments,
+                            { showComments = false },
+                            pin,
+                        )
+                    } else if (showComments) {
                         CommentScreenComponent(
                             showComments = showComments,
                             onDismiss = { showComments = false },
@@ -204,16 +271,24 @@ fun PinScreen(
                         )
                     }
 
-                    // 分享对话框
                     val shareText = getShareText(pin)
                     if (shareText != null) {
-                        ShareDialog(
-                            content = pin,
-                            shareText = shareText,
-                            showDialog = showShareDialog,
-                            onDismissRequest = { showShareDialog = false },
-                            context = context,
-                        )
+                        if (testOverrides?.shareDialogContent != null) {
+                            testOverrides.shareDialogContent.invoke(
+                                showShareDialog,
+                                { showShareDialog = false },
+                                pin,
+                                shareText,
+                            )
+                        } else {
+                            ShareDialog(
+                                content = pin,
+                                shareText = shareText,
+                                showDialog = showShareDialog,
+                                onDismissRequest = { showShareDialog = false },
+                                context = context,
+                            )
+                        }
                     }
                 }
             }
@@ -228,6 +303,7 @@ private fun PinContent(
     likeCount: Int,
     onLikeClick: () -> Unit,
     onCommentClick: () -> Unit,
+    linkCardPreviewOverride: PinLinkCardPreview? = null,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -239,12 +315,14 @@ private fun PinContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .windowInsetsPadding(WindowInsets.navigationBars)
+            .testTag(PIN_SCREEN_SCROLL_TAG)
             .padding(16.dp),
     ) {
         // Author info
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .testTag(PIN_SCREEN_AUTHOR_TAG)
                 .clickable {
                     navigator.onNavigate(
                         Person(
@@ -308,6 +386,7 @@ private fun PinContent(
                 html = pin.contentHtml,
                 modifier = Modifier.fuckHonorService(),
                 selectable = true,
+                enableScroll = false,
             )
         }
 
@@ -317,11 +396,21 @@ private fun PinContent(
             it is DataHolder.Pin.ContentLinkCard
         } as? DataHolder.Pin.ContentLinkCard
         if (linkCard != null) {
-            var relatedTitle by remember(linkCard.dataContentType, linkCard.dataContentId, linkCard.url) { mutableStateOf<String?>(null) }
-            var relatedPreview by remember(linkCard.dataContentType, linkCard.dataContentId, linkCard.url) { mutableStateOf<String?>(null) }
-            var isRelatedLoading by remember(linkCard.dataContentType, linkCard.dataContentId, linkCard.url) { mutableStateOf(true) }
+            var relatedTitle by remember(linkCard.dataContentType, linkCard.dataContentId, linkCard.url, linkCardPreviewOverride) {
+                mutableStateOf(linkCardPreviewOverride?.title)
+            }
+            var relatedPreview by remember(linkCard.dataContentType, linkCard.dataContentId, linkCard.url, linkCardPreviewOverride) {
+                mutableStateOf(linkCardPreviewOverride?.preview)
+            }
+            var isRelatedLoading by remember(linkCard.dataContentType, linkCard.dataContentId, linkCard.url, linkCardPreviewOverride) {
+                mutableStateOf(linkCardPreviewOverride == null)
+            }
 
-            LaunchedEffect(linkCard.dataContentType, linkCard.dataContentId, linkCard.url) {
+            LaunchedEffect(linkCard.dataContentType, linkCard.dataContentId, linkCard.url, linkCardPreviewOverride) {
+                if (linkCardPreviewOverride != null) {
+                    isRelatedLoading = false
+                    return@LaunchedEffect
+                }
                 isRelatedLoading = true
                 val preview = fetchLinkCardPreview(context, linkCard)
                 relatedTitle = preview?.title
@@ -332,9 +421,10 @@ private fun PinContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag(PIN_SCREEN_LINK_CARD_TAG)
                     .clickable {
                         val targetUrl = linkCard.url.takeIf { it.isNotBlank() }
-                        val destination = targetUrl?.toUri()?.let(::resolveContent)
+                        val destination = targetUrl?.let(::resolveContent)
 
                         if (destination != null) {
                             navigator.onNavigate(destination)
@@ -407,6 +497,7 @@ private fun PinContent(
         ) {
             FilledTonalButton(
                 onClick = onLikeClick,
+                modifier = Modifier.testTag(PIN_SCREEN_LIKE_BUTTON_TAG),
             ) {
                 Icon(
                     if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -422,6 +513,7 @@ private fun PinContent(
 
             FilledTonalButton(
                 onClick = onCommentClick,
+                modifier = Modifier.testTag(PIN_SCREEN_COMMENT_BUTTON_TAG),
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.Comment,
@@ -467,25 +559,20 @@ private fun linkCardTypeLabel(dataContentType: String): String = when (dataConte
     else -> dataContentType
 }
 
-private data class LinkCardPreview(
-    val title: String,
-    val preview: String,
-)
-
 private suspend fun fetchLinkCardPreview(
     context: Context,
     linkCard: DataHolder.Pin.ContentLinkCard,
-): LinkCardPreview? {
+): PinLinkCardPreview? {
     val destination = resolveLinkCardDestination(linkCard) ?: return null
     return when (destination) {
         is Article -> {
             when (val detail = DataHolder.getContentDetail(context, destination)) {
-                is DataHolder.Article -> LinkCardPreview(
+                is DataHolder.Article -> PinLinkCardPreview(
                     title = compactTitle(detail.title),
                     preview = compactPreview(detail.excerpt.ifBlank { detail.content }),
                 )
 
-                is DataHolder.Answer -> LinkCardPreview(
+                is DataHolder.Answer -> PinLinkCardPreview(
                     title = compactTitle(detail.question.title),
                     preview = compactPreview(detail.excerpt.ifBlank { detail.content }),
                 )
@@ -496,7 +583,7 @@ private suspend fun fetchLinkCardPreview(
 
         is Question -> {
             DataHolder.getContentDetail(context, destination)?.let { detail ->
-                LinkCardPreview(
+                PinLinkCardPreview(
                     title = compactTitle(detail.title),
                     preview = compactPreview(detail.detail),
                 )
@@ -505,7 +592,7 @@ private suspend fun fetchLinkCardPreview(
 
         is Pin -> {
             DataHolder.getContentDetail(context, destination)?.let { detail ->
-                LinkCardPreview(
+                PinLinkCardPreview(
                     title = "${detail.author.name} 的想法",
                     preview = compactPreview(detail.contentHtml),
                 )
@@ -519,7 +606,6 @@ private suspend fun fetchLinkCardPreview(
 private fun resolveLinkCardDestination(linkCard: DataHolder.Pin.ContentLinkCard): NavDestination? {
     val byUrl = linkCard.url
         .takeIf { it.isNotBlank() }
-        ?.toUri()
         ?.let(::resolveContent)
     if (byUrl != null) return byUrl
 

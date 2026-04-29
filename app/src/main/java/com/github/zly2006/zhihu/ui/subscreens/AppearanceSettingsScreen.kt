@@ -77,6 +77,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -113,6 +114,19 @@ const val DUO3_CARD_LARGE_TITLE_PREFERENCE_KEY = "duo3_card_large_title"
 const val PREF_FONT_SIZE = "contentFontSize"
 const val PREF_LINE_HEIGHT = "contentLineHeight"
 const val LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY = "listPaneDefaultWidthDp"
+internal const val APPEARANCE_SETTINGS_SCROLL_TAG = "appearanceSettings.scroll"
+internal const val APPEARANCE_SETTINGS_START_DESTINATION_TAG = "appearanceSettings.startDestination"
+internal const val APPEARANCE_SETTINGS_ANSWER_DOUBLE_TAP_TAG = "appearanceSettings.answerDoubleTap"
+internal const val APPEARANCE_SETTINGS_USE_WEBVIEW_TAG = "appearanceSettings.useWebView"
+internal const val APPEARANCE_SETTINGS_WEBVIEW_FONT_TAG = "appearanceSettings.webViewFont"
+internal const val APPEARANCE_SETTINGS_WEBVIEW_OPTIONS_TAG = "appearanceSettings.webViewOptions"
+internal const val APPEARANCE_SETTINGS_BOTTOM_BAR_SECTION_KEY = "appearanceSettings.bottomBarSection"
+
+internal fun appearanceSettingsStartDestinationOptionTag(key: String): String =
+    "appearanceSettings.startDestinationOption.$key"
+
+internal fun appearanceSettingsBottomBarItemTag(key: String): String =
+    "appearanceSettings.bottomBarItem.$key"
 
 private val topLevelDestinationsInOrder: List<Pair<String, NavDestination>> = listOf(
     Home.name to Home,
@@ -283,6 +297,7 @@ fun AppearanceSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
+                .testTag(APPEARANCE_SETTINGS_SCROLL_TAG)
                 .padding(innerPadding)
                 .padding(vertical = 16.dp),
         ) {
@@ -593,6 +608,7 @@ fun AppearanceSettingsScreen(
                     mutableStateOf(preferences.getBoolean(ARTICLE_USE_WEBVIEW_PREFERENCE_KEY, false))
                 }
                 SettingItemWithSwitch(
+                    modifier = Modifier.testTag(APPEARANCE_SETTINGS_USE_WEBVIEW_TAG),
                     title = { Text("使用 WebView 显示文章") },
                     description = { Text("关闭后使用 Compose 渲染，支持代码高亮等高级功能。") },
                     checked = articleUseWebview.value,
@@ -605,7 +621,7 @@ fun AppearanceSettingsScreen(
                     bringIntoViewRequester = requesterFor(ARTICLE_USE_WEBVIEW_PREFERENCE_KEY),
                 )
 
-                AnimatedVisibility(visible = articleUseWebview.value) {
+                if (articleUseWebview.value) {
                     var customFontName by remember {
                         mutableStateOf(preferences.getString("webviewCustomFontName", null))
                     }
@@ -625,10 +641,17 @@ fun AppearanceSettingsScreen(
                         Toast.makeText(context, "字体已设置，重新打开文章后生效", Toast.LENGTH_SHORT).show()
                     }
                     Column(
+                        modifier = Modifier.testTag(APPEARANCE_SETTINGS_WEBVIEW_OPTIONS_TAG),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         SettingItem(
-                            title = { Text("WebView 自定义字体") },
+                            modifier = Modifier.testTag(APPEARANCE_SETTINGS_WEBVIEW_FONT_TAG),
+                            title = {
+                                Text(
+                                    "WebView 自定义字体",
+                                    modifier = Modifier.testTag(APPEARANCE_SETTINGS_WEBVIEW_FONT_TAG),
+                                )
+                            },
                             description = { Text(customFontName ?: "未设置") },
                             bottomAction = {
                                 Row(
@@ -794,6 +817,9 @@ fun AppearanceSettingsScreen(
                 SettingItem(
                     title = { Text("双击回答动作") },
                     description = { Text("双击回答正文时执行的动作。默认弹窗询问。") },
+                    settingKey = ANSWER_DOUBLE_TAP_ACTION_PREFERENCE_KEY,
+                    highlightedKey = setting,
+                    bringIntoViewRequester = requesterFor(ANSWER_DOUBLE_TAP_ACTION_PREFERENCE_KEY),
                     endAction = {
                         ExposedDropdownMenuBox(
                             expanded = answerDoubleTapExpanded,
@@ -806,7 +832,8 @@ fun AppearanceSettingsScreen(
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = answerDoubleTapExpanded) },
                                 modifier = Modifier
                                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                                    .width(160.dp),
+                                    .width(160.dp)
+                                    .testTag(APPEARANCE_SETTINGS_ANSWER_DOUBLE_TAP_TAG),
                                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                             )
                             ExposedDropdownMenu(
@@ -875,6 +902,9 @@ fun AppearanceSettingsScreen(
 
             SettingItemGroup(
                 title = "底部导航栏",
+                settingKey = APPEARANCE_SETTINGS_BOTTOM_BAR_SECTION_KEY,
+                highlightedKey = setting,
+                bringIntoViewRequester = requesterFor(APPEARANCE_SETTINGS_BOTTOM_BAR_SECTION_KEY),
             ) {
                 val startDestinationItems = allBottomBarItems.filter { it.first in selectedBottomBarItemKeys.value }
 
@@ -898,7 +928,8 @@ fun AppearanceSettingsScreen(
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = startDestinationExpanded) },
                                 modifier = Modifier
                                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                                    .width(160.dp),
+                                    .width(160.dp)
+                                    .testTag(APPEARANCE_SETTINGS_START_DESTINATION_TAG),
                                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                             )
                             ExposedDropdownMenu(
@@ -907,6 +938,7 @@ fun AppearanceSettingsScreen(
                             ) {
                                 startDestinationItems.forEach { (key, label) ->
                                     DropdownMenuItem(
+                                        modifier = Modifier.testTag(appearanceSettingsStartDestinationOptionTag(key)),
                                         text = { Text(label) },
                                         onClick = {
                                             startDestinationKey = key
@@ -943,6 +975,7 @@ fun AppearanceSettingsScreen(
 
                                 Row(
                                     modifier = Modifier
+                                        .testTag(appearanceSettingsBottomBarItemTag(key))
                                         .fillMaxWidth()
                                         .clickable(enabled = isEnabled) {
                                             when {

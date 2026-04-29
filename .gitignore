@@ -40,8 +40,17 @@ google-services.json
 
 # Temporary files
 .tmp/
+.memory/*
+!.memory/.gitkeep
+__pycache__/
 
 # Oh my codex
 .omx/
 
 .worktrees
+
+# Local secrets
+.secret/
+.log/
+.codex/autoreview-state.json
+.codex/hooks/__pycache__/

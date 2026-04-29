@@ -67,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,6 +99,8 @@ fun SearchScreen(
     innerPadding: PaddingValues,
     search: Search,
     selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    testHotSearchQueries: List<String>? = null,
+    onTestHotSearchRefresh: (() -> Unit)? = null,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalActivity.current as MainActivity
@@ -108,8 +111,13 @@ fun SearchScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val showHotSearch = remember { mutableStateOf(preferences.getBoolean("showSearchHotSearch", true)) }
-    val hotSearchItems = remember { mutableStateListOf<HotSearchItem>() }
+    val hotSearchItems = remember(testHotSearchQueries) {
+        mutableStateListOf<HotSearchItem>().apply {
+            addAll(testHotSearchQueries.orEmpty().map { query -> HotSearchItem(query = query) })
+        }
+    }
     var moreMenuExpanded by remember { mutableStateOf(false) }
+    val useTestHotSearchQueries = testHotSearchQueries != null
 
     suspend fun fetchHotSearch() {
         val json = AccountData.fetchGet(context, "https://www.zhihu.com/api/v4/search/hot_search") ?: return
@@ -120,8 +128,10 @@ fun SearchScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (showHotSearch.value) runCatching { fetchHotSearch() }
+    LaunchedEffect(showHotSearch.value, useTestHotSearchQueries) {
+        if (showHotSearch.value && !useTestHotSearchQueries) {
+            runCatching { fetchHotSearch() }
+        }
     }
 
     // Load search results when query is not empty
@@ -171,7 +181,8 @@ fun SearchScreen(
                                     onValueChange = { searchText = it },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .padding(end = 8.dp),
+                                        .padding(end = 8.dp)
+                                        .testTag("search_input"),
                                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     ),
@@ -202,7 +213,9 @@ fun SearchScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     IconButton(
                                         onClick = { searchText = "" },
-                                        modifier = Modifier.size(20.dp),
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .testTag("search_clear_button"),
                                     ) {
                                         Icon(
                                             Icons.Default.Clear,
@@ -217,7 +230,10 @@ fun SearchScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = navigator.onNavigateBack) {
+                    IconButton(
+                        onClick = navigator.onNavigateBack,
+                        modifier = Modifier.testTag("search_back_button"),
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },
@@ -236,7 +252,8 @@ fun SearchScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
+                            .padding(16.dp)
+                            .testTag("search_hot_list"),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -251,16 +268,24 @@ fun SearchScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(
                                     onClick = {
-                                        coroutineScope.launch { runCatching { fetchHotSearch() } }
+                                        if (useTestHotSearchQueries) {
+                                            onTestHotSearchRefresh?.invoke()
+                                        } else {
+                                            coroutineScope.launch { runCatching { fetchHotSearch() } }
+                                        }
                                     },
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .testTag("search_hot_refresh_button"),
                                 ) {
                                     Icon(Icons.Default.Refresh, contentDescription = "刷新热搜", modifier = Modifier.size(18.dp))
                                 }
                                 Spacer(modifier = Modifier.width(4.dp))
                                 IconButton(
                                     onClick = { moreMenuExpanded = true },
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .testTag("search_hot_more_button"),
                                 ) {
                                     Icon(Icons.Default.MoreVert, contentDescription = "更多", modifier = Modifier.size(18.dp))
                                     DropdownMenu(
