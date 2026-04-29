@@ -157,7 +157,6 @@ fun ContentListDetailScreen(
                         ArticleScreen(
                             article = currentDestination,
                             viewModel = viewModel,
-                            innerPadding = innerPadding,
                             paneNavigator = paneNavigator,
                         )
                     }
