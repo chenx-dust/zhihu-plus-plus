@@ -22,6 +22,8 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,15 +32,20 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
@@ -53,12 +60,15 @@ import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalNavigationBarOverride
+import androidx.compose.material3.LocalNavigationRailOverride
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationBarOverride
 import androidx.compose.material3.NavigationBarOverrideScope
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.NavigationRailOverride
+import androidx.compose.material3.NavigationRailOverrideScope
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,11 +78,15 @@ import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItemColors
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldState
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldValue
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +102,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -198,7 +214,10 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
     val navEntry by navController.currentBackStackEntryAsState()
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val paneDirective = calculatePaneScaffoldDirective(adaptiveInfo)
-    val navigationSuiteState = rememberNavigationSuiteScaffoldState()
+    val navSuiteType = NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfo())
+    val navigationSuiteState = rememberSaveable(saver = MyNavigationSuiteScaffoldStateImpl.saver()) {
+        MyNavigationSuiteScaffoldStateImpl(initialValue = NavigationSuiteScaffoldValue.Visible)
+    }
     val isSinglePaneWindow = paneDirective.maxHorizontalPartitions == 1
     var isSinglePaneListDetailShowingDetail by rememberSaveable { mutableStateOf(false) }
     // 滚动时自动隐藏底部导航栏
@@ -269,8 +288,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
         else -> -1
     }
 
-    val useVerticalTopLevelAnimation = paneDirective.maxHorizontalPartitions > 1
-
     // 通用动画创建函数
     @Suppress("KotlinConstantConditions")
     fun createSlideAnimation(
@@ -289,10 +306,10 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
 
                 isPop && !isEnter -> {
                     return if (useVerticalAnimation) {
-                        slideOutVertically(tween(300)) { it } + fadeOut(tween(300))
+                        slideOutVertically(tween(300)) { it }
                     } else {
-                        slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300))
-                    }
+                        slideOutHorizontally(tween(300)) { it }
+                    } + fadeOut(tween(300))
                 }
 
                 !isPop && isEnter -> {
@@ -317,18 +334,18 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
             // 同一页面
             else -> return if (isEnter) EnterTransition.None else ExitTransition.None
         }
-        return if (useVerticalAnimation) {
-            if (isEnter) {
-                slideInVertically(tween(300)) { it * offset } + fadeIn(tween(300))
+        return if (isEnter) {
+            if (useVerticalAnimation) {
+                slideInVertically(tween(300)) { it * offset }
             } else {
-                slideOutVertically(tween(300)) { it * offset } + fadeOut(tween(300))
-            }
+                slideInHorizontally(tween(300)) { it * offset }
+            } + fadeIn(tween(300))
         } else {
-            if (isEnter) {
-                slideInHorizontally(tween(300)) { it * offset } + fadeIn(tween(300))
+            if (useVerticalAnimation) {
+                slideOutVertically(tween(300)) { it * offset }
             } else {
-                slideOutHorizontally(tween(300)) { it * offset } + fadeOut(tween(300))
-            }
+                slideOutHorizontally(tween(300)) { it * offset }
+            } + fadeOut(tween(300))
         }
     }
 
@@ -370,33 +387,56 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
         }
 
     @OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
-    val myCustomOverride = object : NavigationBarOverride {
+    val myCustomOverride = object : NavigationBarOverride, NavigationRailOverride {
         @Composable
         override fun NavigationBarOverrideScope.NavigationBar() {
-            AnimatedVisibility(
-                visible = (!autoHideBottomBar || isBottomBarVisible) && isTopLevelDest(navEntry),
-                enter = slideInVertically(tween(200)) { it },
-                exit = slideOutVertically(tween(200)) { it },
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = contentColor,
+                tonalElevation = tonalElevation,
+                modifier = this@NavigationBar.modifier.height(
+                    (if (duo3NavStyle) 64.dp else 56.dp) + bottomPadding,
+                ),
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = contentColor,
-                    tonalElevation = tonalElevation,
-                    modifier = this@NavigationBar.modifier.height(
-                        (if (duo3NavStyle) 64.dp else 56.dp) + bottomPadding,
-                    ),
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(windowInsets)
+                            .padding(top = (if (duo3NavStyle) 4.dp else 0.dp))
+                            .selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = content,
+                )
+            }
+        }
+
+        @Composable
+        override fun NavigationRailOverrideScope.NavigationRail() {
+            Surface(
+                color = containerColor,
+                contentColor = contentColor,
+                modifier = this@NavigationRail.modifier.width(
+                    (if (duo3NavStyle) 64.dp else 56.dp),
+                ),
+            ) {
+                Column(
+                    Modifier.fillMaxHeight()
+                        .windowInsetsPadding(windowInsets)
+                        .widthIn(min = 80.dp)
+                        .padding(vertical = (if (duo3NavStyle) 4.dp else 0.dp))
+                        .selectableGroup()
+                        .semantics { isTraversalGroup = true },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .windowInsetsPadding(windowInsets)
-                                .padding(top = (if (duo3NavStyle) 4.dp else 0.dp))
-                                .selectableGroup(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        content = content,
-                    )
+                    val header = header
+                    if (header != null) {
+                        header()
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    content()
                 }
             }
         }
@@ -404,6 +444,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
 
     CompositionLocalProvider(
         LocalNavigationBarOverride provides myCustomOverride,
+        LocalNavigationRailOverride provides myCustomOverride,
     ) {
         NavigationSuiteScaffold(
             modifier = modifier,
@@ -475,7 +516,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = false,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = useVerticalTopLevelAnimation,
+                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
                         ) as EnterTransition
                     },
                     exitTransition = {
@@ -486,7 +527,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = false,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = useVerticalTopLevelAnimation,
+                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
                         ) as ExitTransition
                     },
                     popEnterTransition = {
@@ -497,7 +538,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = true,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = useVerticalTopLevelAnimation,
+                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
                         ) as EnterTransition
                     },
                     popExitTransition = {
@@ -508,7 +549,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = true,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = useVerticalTopLevelAnimation,
+                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
                         ) as ExitTransition
                     },
                 ) {
@@ -745,6 +786,71 @@ private fun isTopLevelDest(navEntry: NavBackStackEntry?): Boolean = navEntry.has
 internal fun NavBackStackEntry?.hasRoute(cls: KClass<out NavDestination>): Boolean {
     val dest = this?.destination ?: return false
     return dest.hierarchy.any { it.hasRoute(cls) }
+}
+
+private fun NavigationSuiteType.isHorizontalNavigation(): Boolean =
+    this == NavigationSuiteType.ShortNavigationBarCompact ||
+            this == NavigationSuiteType.ShortNavigationBarMedium ||
+            this == NavigationSuiteType.NavigationBar
+
+// 覆盖原有动画
+internal class MyNavigationSuiteScaffoldStateImpl(
+    var initialValue: NavigationSuiteScaffoldValue,
+) : NavigationSuiteScaffoldState {
+    private val internalValue: Float = if (initialValue == NavigationSuiteScaffoldValue.Visible) VISIBLE else HIDDEN
+    private val internalState = Animatable(internalValue, Float.VectorConverter)
+    private val currentValueState = derivedStateOf {
+        if (internalState.value == VISIBLE) {
+            NavigationSuiteScaffoldValue.Visible
+        } else {
+            NavigationSuiteScaffoldValue.Hidden
+        }
+    }
+
+    override val isAnimating: Boolean
+        get() = internalState.isRunning
+
+    override val targetValue: NavigationSuiteScaffoldValue
+        get() =
+            if (internalState.targetValue == VISIBLE) {
+                NavigationSuiteScaffoldValue.Visible
+            } else {
+                NavigationSuiteScaffoldValue.Hidden
+            }
+
+    override val currentValue: NavigationSuiteScaffoldValue
+        get() = currentValueState.value
+
+    override suspend fun hide() {
+        internalState.animateTo(targetValue = HIDDEN, animationSpec = tween(200))
+    }
+
+    override suspend fun show() {
+        internalState.animateTo(targetValue = VISIBLE, animationSpec = tween(200))
+    }
+
+    override suspend fun toggle() {
+        internalState.animateTo(
+            targetValue = if (targetValue == NavigationSuiteScaffoldValue.Visible) HIDDEN else VISIBLE,
+            animationSpec = tween(200),
+        )
+    }
+
+    override suspend fun snapTo(targetValue: NavigationSuiteScaffoldValue) {
+        val target = if (targetValue == NavigationSuiteScaffoldValue.Visible) VISIBLE else HIDDEN
+        internalState.snapTo(target)
+    }
+
+    companion object {
+        private const val HIDDEN = 0f
+        private const val VISIBLE = 1f
+
+        fun saver() =
+            androidx.compose.runtime.saveable.Saver<NavigationSuiteScaffoldState, NavigationSuiteScaffoldValue>(
+                save = { it.targetValue },
+                restore = { MyNavigationSuiteScaffoldStateImpl(it) },
+            )
+    }
 }
 
 @Preview(showBackground = true)

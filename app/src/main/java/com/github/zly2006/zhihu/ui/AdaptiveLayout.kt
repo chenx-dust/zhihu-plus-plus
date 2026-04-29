@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val SinglePaneCardHorizontalPadding = 16.dp
-private val MultiPaneCardHorizontalPadding = 4.dp
+private val MultiPaneCardHorizontalPadding = 8.dp
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
