@@ -551,7 +551,7 @@ private fun FeedCardContent(
                     text = parseHtmlTextWithTheme(item.summary ?: ""),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 4,
+                    maxLines = if (item.title.isEmpty()) 5 else 4,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )

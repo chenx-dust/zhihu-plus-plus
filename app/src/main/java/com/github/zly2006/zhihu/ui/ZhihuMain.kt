@@ -418,14 +418,15 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                 color = containerColor,
                 contentColor = contentColor,
                 modifier = this@NavigationRail.modifier.width(
-                    (if (duo3NavStyle) 64.dp else 56.dp),
+                    (if (duo3NavStyle) 68.dp else 60.dp),
                 ),
             ) {
                 Column(
                     Modifier.fillMaxHeight()
                         .windowInsetsPadding(windowInsets)
                         .widthIn(min = 80.dp)
-                        .padding(vertical = (if (duo3NavStyle) 4.dp else 0.dp))
+                        .padding(vertical = (if (duo3NavStyle) 14.dp else 0.dp))
+                        .padding(start = 8.dp)
                         .selectableGroup()
                         .semantics { isTraversalGroup = true },
                     horizontalAlignment = Alignment.CenterHorizontally,

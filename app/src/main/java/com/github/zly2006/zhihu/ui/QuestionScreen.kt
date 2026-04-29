@@ -20,11 +20,13 @@ package com.github.zly2006.zhihu.ui
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,19 +44,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
@@ -62,6 +69,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -92,6 +100,7 @@ import com.github.zly2006.zhihu.WebviewActivity
 import com.github.zly2006.zhihu.data.AccountData
 import com.github.zly2006.zhihu.data.DataHolder
 import com.github.zly2006.zhihu.markdown.RenderMarkdown
+import com.github.zly2006.zhihu.navigation.History
 import com.github.zly2006.zhihu.navigation.Question
 import com.github.zly2006.zhihu.ui.components.CommentScreenComponent
 import com.github.zly2006.zhihu.ui.components.FeedCard
@@ -108,6 +117,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
+import kotlin.math.max
 
 /**
  * Instrumented tests inject fixed state and side-effect callbacks here so QuestionScreen can be
@@ -243,8 +253,18 @@ fun QuestionScreen(
             }
         }
     }
-
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val scrollState = rememberScrollState()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        state = rememberSaveable(inputs = arrayOf(question.questionId), saver = TopAppBarState.Saver) {
+            TopAppBarState(-Float.MAX_VALUE, 0f, 0f)
+        },
+    )
+    var scrollStateMaxValue by remember { mutableIntStateOf(0) }
+    LaunchedEffect(scrollState.maxValue) {
+        if (scrollState.maxValue != Int.MAX_VALUE) {
+            scrollStateMaxValue = max(scrollState.maxValue, scrollStateMaxValue)
+        }
+    }
     FeedPullToRefresh(viewModel) {
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -258,6 +278,67 @@ fun QuestionScreen(
                             maxLines = if (expanded) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                    },
+                    actions = {
+                        var showActionsMenu by remember { mutableStateOf(false) }
+                        BackHandler(enabled = showActionsMenu) {
+                            showActionsMenu = false
+                        }
+                        IconButton(
+                            modifier = Modifier.testTag(ONLINE_HISTORY_OVERFLOW_TAG),
+                            onClick = { showActionsMenu = true },
+                        ) {
+                            Icon(
+                                Icons.Filled.MoreVert,
+                                contentDescription = "更多选项",
+                            )
+
+                            DropdownMenu(
+                                expanded = showActionsMenu,
+                                onDismissRequest = { showActionsMenu = false },
+                            ) {
+                                val scope = rememberCoroutineScope()
+                                DropdownMenuItem(
+                                    text = { Text(if (isFollowing) "已关注" else "关注问题") },
+                                    onClick = {
+                                        scope.launch {
+                                            val nextFollowing = !isFollowing
+                                            testOverrides?.onFollowQuestion?.invoke(nextFollowing) ?: viewModel.followQuestion(
+                                                context,
+                                                question.questionId,
+                                                nextFollowing,
+                                            )
+                                            isFollowing = nextFollowing
+                                            followerCount += if (isFollowing) 1 else -1
+                                            if (testOverrides == null) {
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        if (isFollowing) "已关注问题" else "已取消关注问题",
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                            }
+                                        }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("查看日志") },
+                                    onClick = {
+                                        testOverrides?.onOpenLog?.invoke() ?: run {
+                                            try {
+                                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                    data = "https://www.zhihu.com/question/${question.questionId}/log".toUri()
+                                                    setClass(context, WebviewActivity::class.java)
+                                                }
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, "打开日志失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    },
+                                )
+                            }
+                        }
                     },
                     scrollBehavior = scrollBehavior,
                 )
@@ -307,9 +388,10 @@ fun QuestionScreen(
                                         exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top),
                                     ) {
                                         Column(
-                                            modifier = Modifier.testTag(QUESTION_DETAIL_CONTENT_TAG),
+                                            modifier = Modifier
+                                                .clickable { isQuestionDetailExpanded = !isQuestionDetailExpanded }
+                                                .testTag(QUESTION_DETAIL_CONTENT_TAG),
                                         ) {
-                                            Spacer(Modifier.height(10.dp))
                                             if (preferences.getBoolean(ARTICLE_USE_WEBVIEW_PREFERENCE_KEY, false)) {
                                                 WebviewComp {
                                                     it.loadZhihu(
@@ -336,7 +418,7 @@ fun QuestionScreen(
                                             text = questionContentPreview,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(top = 10.dp)
+                                                .clickable { isQuestionDetailExpanded = !isQuestionDetailExpanded }
                                                 .testTag(QUESTION_DETAIL_PREVIEW_TAG),
                                             style = MaterialTheme.typography.bodyMedium,
                                             maxLines = 3,
@@ -351,6 +433,7 @@ fun QuestionScreen(
                         FlowRow(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(top = 10.dp)
                                 .padding(horizontal = LocalCardHorizontalPadding.current),
                             itemVerticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -400,104 +483,6 @@ fun QuestionScreen(
                                     Text("最新")
                                 }
                             }
-
-                            val scope = rememberCoroutineScope()
-                            Button(
-                                onClick = {
-                                    scope.launch {
-                                        val nextFollowing = !isFollowing
-                                        testOverrides?.onFollowQuestion?.invoke(nextFollowing) ?: viewModel.followQuestion(
-                                            context,
-                                            question.questionId,
-                                            nextFollowing,
-                                        )
-                                        isFollowing = nextFollowing
-                                        followerCount += if (isFollowing) 1 else -1
-                                        if (testOverrides == null) {
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    if (isFollowing) "已关注问题" else "已取消关注问题",
-                                                    Toast.LENGTH_SHORT,
-                                                ).show()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .testTag(QUESTION_FOLLOW_BUTTON_TAG)
-                                    .semantics { selected = isFollowing },
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                colors = if (isFollowing) {
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    )
-                                } else {
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    )
-                                },
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = if (isFollowing) "取消关注" else "关注问题")
-                                Spacer(Modifier.width(8.dp))
-                                Text(if (isFollowing) "已关注" else "关注问题")
-                            }
-                        }
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = LocalCardHorizontalPadding.current),
-                            itemVerticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Button(
-                                onClick = {
-                                    testOverrides?.onOpenLog?.invoke() ?: run {
-                                        try {
-                                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                                data = "https://www.zhihu.com/question/${question.questionId}/log".toUri()
-                                                setClass(context, WebviewActivity::class.java)
-                                            }
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "打开日志失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.testTag(QUESTION_VIEW_LOG_BUTTON_TAG),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            ) {
-                                Text("查看日志")
-                            }
-                            Spacer(Modifier.width(8.dp))
-
-                            Button(
-                                onClick = {
-                                    if (shareText != null) {
-                                        if (testOverrides != null) {
-                                            testOverrides.onShareAction?.invoke()
-                                            showShareDialog = true
-                                        } else {
-                                            handleShareAction(context, question) {
-                                                showShareDialog = true
-                                            }
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.testTag(QUESTION_SHARE_BUTTON_TAG),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                ),
-                            ) {
-                                Icon(Icons.Filled.Share, contentDescription = "分享")
-                                Spacer(Modifier.width(8.dp))
-                                Text("分享")
-                            }
-
-                            Spacer(Modifier.width(8.dp))
                             Button(
                                 onClick = { showComments = true },
                                 modifier = Modifier.testTag(QUESTION_COMMENTS_BUTTON_TAG),
@@ -514,8 +499,10 @@ fun QuestionScreen(
                         }
                         Text(
                             "$answerCount 个回答  $visitCount 次浏览  $commentCount 条评论  $followerCount 人关注",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
-                                .padding(16.dp)
+                                .padding(horizontal = LocalCardHorizontalPadding.current, vertical = 8.dp)
                                 .testTag(QUESTION_STATS_TAG),
                         )
                     }
