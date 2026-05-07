@@ -19,7 +19,6 @@ package com.github.zly2006.zhihu.ui
 
 import android.annotation.SuppressLint
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
@@ -82,7 +81,6 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldState
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldValue
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
-import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -236,14 +234,15 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
 
     LaunchedEffect(
         isSinglePaneWindow,
+        navSuiteType,
         isSinglePaneListDetailShowingDetail,
         autoHideBottomBar,
         isBottomBarVisible,
         navEntry,
     ) {
-        val shouldHideNavigationSuite = isSinglePaneWindow &&
+        val shouldHideNavigationSuite = navSuiteType.isNavigationBar() &&
             (
-                isSinglePaneListDetailShowingDetail ||
+                isSinglePaneWindow && isSinglePaneListDetailShowingDetail ||
                     (autoHideBottomBar && !isBottomBarVisible && isTopLevelDest(navEntry))
             )
         navigationSuiteState.snapTo(
@@ -517,7 +516,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = false,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
+                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
                         ) as EnterTransition
                     },
                     exitTransition = {
@@ -528,7 +527,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = false,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
+                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
                         ) as ExitTransition
                     },
                     popEnterTransition = {
@@ -539,7 +538,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = true,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
+                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
                         ) as EnterTransition
                     },
                     popExitTransition = {
@@ -550,7 +549,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             isPop = true,
                             fromIndex = fromIndex,
                             toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isHorizontalNavigation(),
+                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
                         ) as ExitTransition
                     },
                 ) {
@@ -790,7 +789,7 @@ internal fun NavBackStackEntry?.hasRoute(cls: KClass<out NavDestination>): Boole
     return dest.hierarchy.any { it.hasRoute(cls) }
 }
 
-private fun NavigationSuiteType.isHorizontalNavigation(): Boolean =
+private fun NavigationSuiteType.isNavigationBar(): Boolean =
     this == NavigationSuiteType.ShortNavigationBarCompact ||
             this == NavigationSuiteType.ShortNavigationBarMedium ||
             this == NavigationSuiteType.NavigationBar
