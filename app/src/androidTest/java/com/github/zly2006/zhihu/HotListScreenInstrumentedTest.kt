@@ -18,7 +18,6 @@
 package com.github.zly2006.zhihu
 
 import android.content.Context
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -160,7 +159,6 @@ class HotListScreenInstrumentedTest {
         seedDisplayItems(itemCount)
         return composeRule.setScreenContent {
             HotListScreen(
-                innerPadding = PaddingValues(),
                 onTestRefreshClick = onTestRefreshClick,
                 onTestLoadMore = onTestLoadMore,
             )

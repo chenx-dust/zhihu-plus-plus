@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -149,7 +150,6 @@ data class BlocklistSettingsTestConfig(
 
 @Composable
 fun BlocklistSettingsScreen(
-    innerPadding: PaddingValues,
     testConfig: BlocklistSettingsTestConfig? = null,
 ) {
     val navigator = LocalNavigator.current
@@ -218,6 +218,7 @@ fun BlocklistSettingsScreen(
     }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
             // 只在传统关键词、用户屏蔽和主题屏蔽标签页显示添加按钮
             if (selectedTab == 0 || selectedTab == 2 || selectedTab == 3) {
@@ -239,7 +240,6 @@ fun BlocklistSettingsScreen(
         Column(
             modifier = Modifier
                 .padding(scaffoldPadding)
-                .padding(innerPadding)
                 .testTag(BlocklistSettingsTestTags.ROOT)
                 .fillMaxWidth(),
         ) {

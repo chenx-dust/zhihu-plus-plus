@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
@@ -183,7 +182,6 @@ class CollectionContentScreenInstrumentedTest {
         val navigator = composeRule.setScreenContent {
             CollectionContentScreen(
                 collectionId = SEEDED_COLLECTION_ID,
-                innerPadding = PaddingValues(),
                 testOverrides = CollectionContentScreenTestOverrides(
                     viewModel = seededViewModel,
                     isEnd = true,

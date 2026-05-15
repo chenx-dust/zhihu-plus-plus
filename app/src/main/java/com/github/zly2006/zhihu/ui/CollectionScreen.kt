@@ -18,7 +18,6 @@
 package com.github.zly2006.zhihu.ui
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,7 +50,6 @@ import com.github.zly2006.zhihu.viewmodel.CollectionsViewModel
 @Composable
 fun CollectionScreen(
     urlToken: String,
-    innerPadding: PaddingValues,
     testCollections: List<Collection>? = null,
 ) {
     val navigator = LocalNavigator.current

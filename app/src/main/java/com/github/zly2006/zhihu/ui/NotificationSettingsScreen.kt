@@ -19,7 +19,6 @@ package com.github.zly2006.zhihu.ui
 
 import android.content.Context
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -101,9 +100,7 @@ object NotificationPreferences {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationSettingsScreen(
-    innerPadding: PaddingValues,
-) {
+fun NotificationSettingsScreen() {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()

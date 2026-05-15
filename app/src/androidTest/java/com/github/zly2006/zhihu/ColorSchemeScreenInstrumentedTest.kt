@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -76,7 +75,7 @@ class ColorSchemeScreenInstrumentedTest {
             SideEffect {
                 observedBackgroundArgb.set(observedBackground.toArgb())
             }
-            ColorSchemeScreen(innerPadding = PaddingValues())
+            ColorSchemeScreen()
         }
         val scrollContainer = composeRule.onNode(hasScrollAction())
 

@@ -19,7 +19,6 @@ package com.github.zly2006.zhihu
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyDescendant
@@ -193,7 +192,7 @@ class SystemAndUpdateSettingsScreenInstrumentedTest {
     }
 
     private fun setUpScreen() = composeRule.setScreenContent {
-        SystemAndUpdateSettingsScreen(innerPadding = PaddingValues())
+        SystemAndUpdateSettingsScreen()
     }
 
     private fun scrollContainer() = composeRule.onNode(hasScrollAction())

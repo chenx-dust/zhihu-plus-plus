@@ -197,8 +197,7 @@ fun AccountSettingScreen(
     }
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) { padding ->
         Column(
             modifier = Modifier

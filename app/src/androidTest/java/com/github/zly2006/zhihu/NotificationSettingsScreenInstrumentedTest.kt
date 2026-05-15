@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -109,7 +108,7 @@ class NotificationSettingsScreenInstrumentedTest {
     }
 
     private fun showScreen() = composeRule.setScreenContent {
-        NotificationSettingsScreen(innerPadding = PaddingValues())
+        NotificationSettingsScreen()
     }
 
     private fun scrollToRow(toggleCase: ToggleCase) {

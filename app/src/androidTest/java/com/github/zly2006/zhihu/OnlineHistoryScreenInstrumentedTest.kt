@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -159,7 +158,7 @@ class OnlineHistoryScreenInstrumentedTest {
     private fun setOnlineHistoryScreen(itemCount: Int = 24): RecordingNavigator {
         seedDisplayItems(itemCount)
         return composeRule.setScreenContent {
-            OnlineHistoryScreen(PaddingValues())
+            OnlineHistoryScreen()
         }
     }
 

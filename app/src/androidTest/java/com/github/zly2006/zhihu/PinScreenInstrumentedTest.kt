@@ -18,7 +18,6 @@
 package com.github.zly2006.zhihu
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
@@ -78,7 +77,6 @@ class PinScreenInstrumentedTest {
          */
         composeRule.setScreenContent {
             PinScreen(
-                innerPadding = PaddingValues(),
                 pin = Pin(101),
                 testOverrides = PinScreenTestOverrides(
                     state = PinScreenUiState(isLoading = true),
@@ -89,7 +87,6 @@ class PinScreenInstrumentedTest {
 
         composeRule.setScreenContent {
             PinScreen(
-                innerPadding = PaddingValues(),
                 pin = Pin(101),
                 testOverrides = PinScreenTestOverrides(
                     state = PinScreenUiState(errorMessage = "离线错误"),
@@ -117,7 +114,6 @@ class PinScreenInstrumentedTest {
         var shareActionCount = 0
         val navigator = composeRule.setScreenContent {
             PinScreen(
-                innerPadding = PaddingValues(),
                 pin = Pin(101),
                 testOverrides = PinScreenTestOverrides(
                     state = PinScreenUiState(

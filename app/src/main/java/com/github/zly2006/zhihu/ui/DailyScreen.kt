@@ -107,7 +107,6 @@ data class DailyScreenUiState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DailyScreen(
-    innerPadding: PaddingValues = PaddingValues(0.dp),
     testState: DailyScreenUiState? = null,
     onTestDateSelected: ((String) -> Unit)? = null,
     onTestLoadMore: (() -> Unit)? = null,

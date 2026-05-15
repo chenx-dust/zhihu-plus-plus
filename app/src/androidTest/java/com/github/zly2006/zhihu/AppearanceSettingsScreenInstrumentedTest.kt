@@ -19,7 +19,6 @@ package com.github.zly2006.zhihu
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
@@ -161,7 +160,6 @@ class AppearanceSettingsScreenInstrumentedTest {
         }
         composeRule.setScreenContent {
             AppearanceSettingsScreen(
-                innerPadding = PaddingValues(),
                 setting = setting,
             )
         }

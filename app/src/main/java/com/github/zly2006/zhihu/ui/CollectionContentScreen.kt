@@ -21,7 +21,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,7 +84,6 @@ data class CollectionContentScreenTestOverrides(
 @Composable
 fun CollectionContentScreen(
     collectionId: String,
-    innerPadding: PaddingValues,
     selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
     testOverrides: CollectionContentScreenTestOverrides? = null,
 ) {

@@ -23,7 +23,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -47,12 +46,14 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -135,9 +136,9 @@ data class PinScreenTestOverrides(
     )? = null,
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PinScreen(
-    innerPadding: PaddingValues,
     pin: Pin,
     testOverrides: PinScreenTestOverrides? = null,
     parentNavigator: Navigator = LocalNavigator.current,
@@ -147,14 +148,9 @@ fun PinScreen(
     val httpClient = remember { AccountData.httpClient(context) }
 
     val viewModel = if (testOverrides == null) {
-        viewModel<PinViewModel>(
-            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                    @Suppress("UNCHECKED_CAST")
-                    return PinViewModel(pin, httpClient) as T
-                }
-            },
-        )
+        viewModel<PinViewModel> {
+            PinViewModel(pin, httpClient)
+        }
     } else {
         null
     }
@@ -177,42 +173,50 @@ fun PinScreen(
     var showComments by remember { mutableStateOf(false) }
 
     Scaffold(
-        modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
         topBar = {
-            Row(
+            TopAppBar(
+                title = {
+                    Text(
+                        buildString {
+                            if (viewModel?.pinContent?.author != null) {
+                                append(viewModel.pinContent!!.author.name)
+                                append("的")
+                            }
+                            append("想法")
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(
-                    onClick = navigator.onNavigateBack,
-                    modifier = Modifier.testTag(PIN_SCREEN_BACK_BUTTON_TAG),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                }
-                Text(
-                    "想法",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                IconButton(
-                    onClick = {
-                        val shareText = getShareText(pin)
-                        if (shareText != null) {
-                            testOverrides?.onShareAction?.invoke { showShareDialog = true }
-                                ?: handleShareAction(context, pin) {
-                                    showShareDialog = true
-                                }
-                        }
-                    },
-                    modifier = Modifier.testTag(PIN_SCREEN_SHARE_BUTTON_TAG),
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = "分享")
-                }
-            }
+                navigationIcon = {
+                    IconButton(
+                        onClick = navigator.onNavigateBack,
+                        modifier = Modifier.testTag(PIN_SCREEN_BACK_BUTTON_TAG),
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            val shareText = getShareText(pin)
+                            if (shareText != null) {
+                                testOverrides?.onShareAction?.invoke { showShareDialog = true }
+                                    ?: handleShareAction(context, pin) {
+                                        showShareDialog = true
+                                    }
+                            }
+                        },
+                        modifier = Modifier.testTag(PIN_SCREEN_SHARE_BUTTON_TAG),
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = "分享")
+                    }
+                },
+            )
         },
     ) { innerPadding ->
         Box(

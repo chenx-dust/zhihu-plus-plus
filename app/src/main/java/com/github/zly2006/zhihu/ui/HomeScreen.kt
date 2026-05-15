@@ -47,8 +47,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowCircleUp
-import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.CopyAll
+import androidx.compose.material.icons.filled.MarkUnreadChatAlt
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -77,6 +77,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.github.zly2006.zhihu.BuildConfig
 import com.github.zly2006.zhihu.LoginActivity
@@ -102,6 +103,7 @@ import com.github.zly2006.zhihu.ui.components.PaginatedList
 import com.github.zly2006.zhihu.ui.components.ProgressIndicatorFooter
 import com.github.zly2006.zhihu.updater.UpdateManager
 import com.github.zly2006.zhihu.util.clipboardManager
+import com.github.zly2006.zhihu.util.luoTianYiUrlLauncher
 import com.github.zly2006.zhihu.util.signFetchRequest
 import com.github.zly2006.zhihu.viewmodel.feed.BaseFeedViewModel
 import com.github.zly2006.zhihu.viewmodel.feed.HomeFeedViewModel
@@ -118,8 +120,7 @@ import kotlinx.serialization.json.buildJsonArray
 
 const val PREFERENCE_NAME = "com.github.zly2006.zhihu_preferences"
 const val ARTICLE_USE_WEBVIEW_PREFERENCE_KEY = "webviewRender"
-const val ARTICLE_WEBVIEW_CHANGE_ANNOUNCEMENT_DISMISSED_PREFERENCE_KEY =
-    "articleWebviewChangeAnnouncementDismissed"
+const val QQ_GROUP_DISMISSED_PREFERENCE_KEY = "dismissQQGroup"
 const val HOME_TOP_ACTIONS_TAG = "home_top_actions"
 const val HOME_SEARCH_BUTTON_TAG = "home_search_button"
 const val HOME_NOTIFICATION_BUTTON_TAG = "home_notification_button"
@@ -245,10 +246,10 @@ fun HomeScreen(
     var showFilterExplainDialog by remember {
         mutableStateOf(!preferences.getBoolean("filterExplainDialogShown", false))
     }
-    var showArticleRenderChangeAnnouncement by remember {
+    var showQQGroup by remember {
         mutableStateOf(
             !preferences.getBoolean(
-                ARTICLE_WEBVIEW_CHANGE_ANNOUNCEMENT_DISMISSED_PREFERENCE_KEY,
+                QQ_GROUP_DISMISSED_PREFERENCE_KEY,
                 false,
             ),
         )
@@ -521,31 +522,20 @@ fun HomeScreen(
                             colors = AnnouncementCardDefaults.colorsImportant(),
                         )
                         AnnouncementCard(
-                            visible = showArticleRenderChangeAnnouncement,
-                            title = "文章渲染默认已改为 Compose",
-                            leadingIcon = { Icon(Icons.Default.Code, contentDescription = null) },
-                            content = "我们已默认关闭 WebView 渲染文章，以提供代码高亮等高级渲染能力，并修复了许多由 WebView 带来的 bug。" +
-                                "新的渲染方式可能存在 bug，如遇到请在 GitHub 反馈，也可在设置中重新开启 WebView。",
-                            accept = { Text("去设置") },
+                            visible = showQQGroup,
+                            title = "欢迎加入 QQ 群",
+                            leadingIcon = { Icon(Icons.Default.MarkUnreadChatAlt, contentDescription = null) },
+                            content = "欢迎加入 Zhihu++ QQ 群",
+                            accept = { Text("加入") },
                             onAccept = {
-                                preferences.edit {
-                                    putBoolean(
-                                        ARTICLE_WEBVIEW_CHANGE_ANNOUNCEMENT_DISMISSED_PREFERENCE_KEY,
-                                        true,
-                                    )
-                                }
-                                showArticleRenderChangeAnnouncement = false
-                                context.navigate(Account.AppearanceSettings(ARTICLE_USE_WEBVIEW_PREFERENCE_KEY))
+                                luoTianYiUrlLauncher(context, "https://qm.qq.com/q/A95uVsTTWM".toUri())
                             },
-                            dismiss = { Text("知道了") },
+                            dismiss = { Text("关闭") },
                             onDismiss = {
                                 preferences.edit {
-                                    putBoolean(
-                                        ARTICLE_WEBVIEW_CHANGE_ANNOUNCEMENT_DISMISSED_PREFERENCE_KEY,
-                                        true,
-                                    )
+                                    putBoolean(QQ_GROUP_DISMISSED_PREFERENCE_KEY, true)
                                 }
-                                showArticleRenderChangeAnnouncement = false
+                                showQQGroup = false
                             },
                             colors = AnnouncementCardDefaults.colorsVariant(),
                         )

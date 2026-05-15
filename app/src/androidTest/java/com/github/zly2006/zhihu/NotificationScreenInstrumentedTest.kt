@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -106,7 +105,7 @@ class NotificationScreenInstrumentedTest {
     private fun setNotificationScreenContent(): RecordingNavigator {
         composeRule.seedNotificationViewModel()
         return composeRule.setScreenContent {
-            NotificationScreen(innerPadding = PaddingValues())
+            NotificationScreen()
         }
     }
 

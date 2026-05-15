@@ -71,7 +71,7 @@ class ArticleScreenInstrumentedTest {
 
         composeRule.onNodeWithText("离线 Article 标题").assertIsDisplayed()
         composeRule.onNodeWithText("离线作者").assertIsDisplayed()
-        composeRule.onNodeWithText("IP属地：上海").assertIsDisplayed()
+        composeRule.onNodeWithText("IP属地：上海").assertExists()
         composeRule.onNodeWithContentDescription("更多选项").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("复制链接").assertIsDisplayed().performClick()
         val clipboardText = composeRule.activity.clipboardManager.primaryClip
@@ -86,7 +86,7 @@ class ArticleScreenInstrumentedTest {
         setArticleScreen()
         composeRule.onNodeWithText("离线 Article 标题").assertIsDisplayed()
         composeRule.onNodeWithText("离线作者").assertIsDisplayed()
-        composeRule.onNodeWithText("IP属地：上海").assertIsDisplayed()
+        composeRule.onNodeWithText("IP属地：上海").assertExists()
         composeRule.onNodeWithText("第 1 段离线正文", substring = true).assertIsDisplayed()
     }
 

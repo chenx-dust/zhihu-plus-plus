@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -300,7 +299,6 @@ class PeopleScreenInstrumentedTest {
 
     private fun setPeopleScreen(overrides: PeopleScreenTestOverrides): RecordingNavigator = composeRule.setScreenContent {
         PeopleScreen(
-            innerPadding = PaddingValues(),
             person = ROOT_PERSON,
             testOverrides = overrides,
         )

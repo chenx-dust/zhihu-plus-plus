@@ -18,7 +18,6 @@
 package com.github.zly2006.zhihu
 
 import android.content.Context
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -56,7 +55,7 @@ class ContentFilterSettingsScreenInstrumentedTest {
         composeRule.resetAppPreferences()
 
         composeRule.setScreenContent {
-            ContentFilterSettingsScreen(innerPadding = PaddingValues())
+            ContentFilterSettingsScreen()
         }
 
         composeRule
@@ -84,7 +83,7 @@ class ContentFilterSettingsScreenInstrumentedTest {
         assertEquals(true, preferences().getBoolean("filterFollowedUserContent", false))
 
         composeRule.setScreenContent {
-            ContentFilterSettingsScreen(innerPadding = PaddingValues())
+            ContentFilterSettingsScreen()
         }
 
         composeRule
@@ -104,7 +103,7 @@ class ContentFilterSettingsScreenInstrumentedTest {
         composeRule.resetAppPreferences()
 
         val recordingNavigator = composeRule.setScreenContent {
-            ContentFilterSettingsScreen(innerPadding = PaddingValues())
+            ContentFilterSettingsScreen()
         }
 
         scrollTo(BLOCKLIST_TAG)

@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -116,7 +115,6 @@ class CollectionScreenInstrumentedTest {
     private fun setCollectionScreen(testCollections: List<Collection>) = composeRule.setScreenContent {
         CollectionScreen(
             urlToken = "offline-test-user",
-            innerPadding = PaddingValues(),
             testCollections = testCollections,
         )
     }

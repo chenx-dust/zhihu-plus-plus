@@ -18,14 +18,12 @@
 package com.github.zly2006.zhihu
 
 import android.content.Context
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.zly2006.zhihu.navigation.Account
 import com.github.zly2006.zhihu.navigation.SentenceSimilarityTest
@@ -130,7 +128,7 @@ class DeveloperSettingsScreenInstrumentedTest {
     }
 
     private fun setDeveloperSettingsContent(): RecordingNavigator = composeRule.setScreenContent {
-        DeveloperSettingsScreen(innerPadding = PaddingValues(0.dp))
+        DeveloperSettingsScreen()
     }
 
     private fun isDeveloperModeEnabled(): Boolean = composeRule.activity

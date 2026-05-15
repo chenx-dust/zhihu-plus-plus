@@ -30,7 +30,7 @@ import com.github.zly2006.zhihu.test.MainActivityComposeRule
 import com.github.zly2006.zhihu.test.performHorizontalSwipeCycle
 import com.github.zly2006.zhihu.test.performVerticalSwipeCycle
 import com.github.zly2006.zhihu.test.setScreenContent
-import com.github.zly2006.zhihu.ui.HistoryScreen
+import com.github.zly2006.zhihu.ui.LegacyLocalHistoryScreen
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -54,7 +54,7 @@ class HistoryScreenInstrumentedTest {
         // The expected behavior is a deterministic empty/default render that depends only on local
         // in-memory state, not on whatever history items a previous developer session may have left.
         composeRule.setScreenContent {
-            HistoryScreen(innerPadding = PaddingValues())
+            LegacyLocalHistoryScreen(innerPadding = PaddingValues())
         }
 
         // Wait for the initial LaunchedEffect-driven refresh to finish, then verify the empty

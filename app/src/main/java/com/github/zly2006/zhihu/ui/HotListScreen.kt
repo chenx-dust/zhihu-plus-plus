@@ -41,7 +41,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.zly2006.zhihu.MainActivity
 import com.github.zly2006.zhihu.data.HotListFeed
-import com.github.zly2006.zhihu.navigation.LocalNavigator
 import com.github.zly2006.zhihu.ui.components.BlockUserConfirmDialog
 import com.github.zly2006.zhihu.ui.components.DraggableRefreshButton
 import com.github.zly2006.zhihu.ui.components.FeedCard
@@ -61,7 +60,6 @@ fun HotListScreen(
     onTestRefreshClick: (() -> Unit)? = null,
     onTestLoadMore: (() -> Unit)? = null,
 ) {
-    val navigator = LocalNavigator.current
     val context = LocalActivity.current as MainActivity
     val viewModel: HotListViewModel by context.viewModels()
     val preferences = remember {

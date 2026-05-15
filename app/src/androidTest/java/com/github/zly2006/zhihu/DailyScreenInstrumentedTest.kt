@@ -17,7 +17,6 @@
 
 package com.github.zly2006.zhihu
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
@@ -66,7 +65,6 @@ class DailyScreenInstrumentedTest {
         val selectedDate = AtomicReference<String?>(null)
         composeRule.setScreenContent {
             DailyScreen(
-                innerPadding = PaddingValues(),
                 testState = DailyScreenUiState(isLoading = true),
                 onTestDateSelected = selectedDate::set,
             )
@@ -90,7 +88,6 @@ class DailyScreenInstrumentedTest {
         // flaky networking, account state, or the current day on Zhihu servers.
         composeRule.setScreenContent {
             DailyScreen(
-                innerPadding = PaddingValues(),
                 testState = DailyScreenUiState(
                     isLoading = false,
                     error = "离线错误：日报接口不可用",
@@ -103,7 +100,6 @@ class DailyScreenInstrumentedTest {
 
         composeRule.setScreenContent {
             DailyScreen(
-                innerPadding = PaddingValues(),
                 testState = DailyScreenUiState(isLoading = false),
             )
         }
@@ -129,7 +125,6 @@ class DailyScreenInstrumentedTest {
         )
         composeRule.setScreenContent {
             DailyScreen(
-                innerPadding = PaddingValues(),
                 testState = uiState,
             )
         }

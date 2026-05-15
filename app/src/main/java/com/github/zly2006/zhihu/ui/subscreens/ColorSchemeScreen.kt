@@ -21,7 +21,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,9 +47,7 @@ import com.github.zly2006.zhihu.navigation.LocalNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ColorSchemeScreen(
-    innerPadding: PaddingValues,
-) {
+fun ColorSchemeScreen() {
     val navigator = LocalNavigator.current
     val cs = MaterialTheme.colorScheme
 

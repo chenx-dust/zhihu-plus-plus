@@ -18,7 +18,6 @@
 package com.github.zly2006.zhihu
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
@@ -280,7 +279,6 @@ class BlocklistSettingsScreenInstrumentedTest {
 
     private fun setScreen(testConfig: BlocklistSettingsTestConfig): RecordingNavigator = composeRule.setScreenContent {
         BlocklistSettingsScreen(
-            innerPadding = PaddingValues(),
             testConfig = testConfig,
         )
     }

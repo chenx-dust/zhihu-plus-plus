@@ -646,7 +646,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
-                            HistoryScreen(
+                            LegacyLocalHistoryScreen(
                                 innerPadding,
                                 selectionState = selectionState,
                             )
@@ -658,7 +658,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             OnlineHistoryScreen(
-                                innerPadding = innerPadding,
                                 selectionState = selectionState,
                             )
                         }
@@ -689,7 +688,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, _ ->
                             val data: Collections = navEntry.toRoute()
-                            CollectionScreen(data.userToken, innerPadding)
+                            CollectionScreen(data.userToken)
                         }
                     }
                     composable<CollectionContent> { navEntry ->
@@ -700,7 +699,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             val content: CollectionContent = navEntry.toRoute()
                             CollectionContentScreen(
                                 collectionId = content.collectionId,
-                                innerPadding = innerPadding,
                                 selectionState = selectionState,
                             )
                         }
@@ -712,7 +710,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                         ) { _, selectionState ->
                             val person: Person = navEntry.toRoute()
                             PeopleScreen(
-                                innerPadding = innerPadding,
                                 person = person,
                                 selectionState = selectionState,
                             )
@@ -720,7 +717,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Pin> {
                         val pin = it.toRoute<Pin>()
-                        PinScreen(innerPadding, pin)
+                        PinScreen(pin)
                     }
                     composable<Account.RecommendSettings.Blocklist> {
                         BlocklistSettingsScreen(PaddingValues())
@@ -742,7 +739,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                         NotificationSettingsScreen(PaddingValues())
                     }
                     composable<SentenceSimilarityTest> {
-                        SentenceSimilarityTestScreen(PaddingValues())
+                        SentenceSimilarityTestScreen()
                     }
                     composable<Account.AppearanceSettings> {
                         val args = it.toRoute<Account.AppearanceSettings>()
@@ -769,7 +766,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                         DeveloperSettingsScreen(PaddingValues())
                     }
                     composable<Account.DeveloperSettings.ColorScheme> {
-                        ColorSchemeScreen(PaddingValues())
+                        ColorSchemeScreen()
                     }
                 }
             }
