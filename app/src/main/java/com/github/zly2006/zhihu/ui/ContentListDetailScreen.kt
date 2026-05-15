@@ -111,7 +111,6 @@ private fun ContentPaneDestination.toNavDestination(): NavDestination? = when (t
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun ContentListDetailScreen(
-    innerPadding: PaddingValues,
     onSinglePaneDetailChanged: (Boolean) -> Unit = {},
     listPane: @Composable (Navigator, ListDetailSelectionState<ContentPaneDestination>) -> Unit,
 ) {
@@ -173,7 +172,6 @@ fun ContentListDetailScreen(
 
                     is Pin -> {
                         PinScreen(
-                            innerPadding = innerPadding,
                             pin = currentDestination,
                             parentNavigator = parentNavigator,
                         )
@@ -181,7 +179,6 @@ fun ContentListDetailScreen(
 
                     is Person -> {
                         PeopleScreen(
-                            innerPadding = innerPadding,
                             person = currentDestination,
                         )
                     }

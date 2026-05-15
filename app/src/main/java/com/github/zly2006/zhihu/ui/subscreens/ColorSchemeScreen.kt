@@ -112,7 +112,6 @@ fun ColorSchemeScreen() {
             ColorGroup("Scrim") {
                 ColorSwatch(cs.scrim, Color.White, "scrim", "White")
             }
-            Spacer(modifier = Modifier.height(innerPadding.calculateBottomPadding()))
         }
     }
 }

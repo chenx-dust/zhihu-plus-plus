@@ -103,7 +103,6 @@ fun SettingsListDetailScreen(
             when (paneDestination.type) {
                 SettingsPaneDestination.Type.Appearance -> {
                     AppearanceSettingsScreen(
-                        innerPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                         setting = paneDestination.setting,
                         onExit = onExit,
                     )
@@ -111,33 +110,24 @@ fun SettingsListDetailScreen(
 
                 SettingsPaneDestination.Type.Recommend -> {
                     ContentFilterSettingsScreen(
-                        innerPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
                         setting = paneDestination.setting,
                     )
                 }
 
                 SettingsPaneDestination.Type.SystemAndUpdate -> {
-                    SystemAndUpdateSettingsScreen(
-                        innerPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
-                    )
+                    SystemAndUpdateSettingsScreen()
                 }
 
                 SettingsPaneDestination.Type.Developer -> {
-                    DeveloperSettingsScreen(
-                        innerPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
-                    )
+                    DeveloperSettingsScreen()
                 }
 
                 SettingsPaneDestination.Type.DeveloperColorScheme -> {
-                    ColorSchemeScreen(
-                        innerPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
-                    )
+                    ColorSchemeScreen()
                 }
 
                 SettingsPaneDestination.Type.RecommendBlocklist -> {
-                    BlocklistSettingsScreen(
-                        innerPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
-                    )
+                    BlocklistSettingsScreen()
                 }
 
                 SettingsPaneDestination.Type.RecommendBlockedHistory -> {

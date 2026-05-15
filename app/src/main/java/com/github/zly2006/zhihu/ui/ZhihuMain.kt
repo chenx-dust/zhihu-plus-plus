@@ -555,7 +555,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                 ) {
                     composable<Home> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             HomeScreen(
@@ -567,7 +566,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Question> { navEntry ->
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             val question: Question = navEntry.toRoute()
@@ -610,7 +608,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<HotList> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             HotListScreen(
@@ -621,7 +618,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Follow> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             FollowScreen(
@@ -633,17 +629,13 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Daily> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, _ ->
-                            DailyScreen(
-                                innerPadding = innerPadding,
-                            )
+                            DailyScreen()
                         }
                     }
                     composable<History> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             LegacyLocalHistoryScreen(
@@ -654,7 +646,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<OnlineHistory> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             OnlineHistoryScreen(
@@ -672,7 +663,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     composable<Search> { navEntry ->
                         val search: Search = navEntry.toRoute()
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             SearchScreen(
@@ -684,7 +674,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Collections> { navEntry ->
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, _ ->
                             val data: Collections = navEntry.toRoute()
@@ -693,7 +682,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<CollectionContent> { navEntry ->
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             val content: CollectionContent = navEntry.toRoute()
@@ -705,7 +693,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Person> { navEntry ->
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             val person: Person = navEntry.toRoute()
@@ -720,23 +707,20 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                         PinScreen(pin)
                     }
                     composable<Account.RecommendSettings.Blocklist> {
-                        BlocklistSettingsScreen(PaddingValues())
+                        BlocklistSettingsScreen()
                     }
                     composable<Account.RecommendSettings.BlockedFeedHistory> {
                         BlockedFeedHistoryScreen()
                     }
                     composable<Notification> {
                         ContentListDetailScreen(
-                            innerPadding = innerPadding,
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, _ ->
-                            NotificationScreen(
-                                innerPadding = innerPadding,
-                            )
+                            NotificationScreen()
                         }
                     }
                     composable<Notification.NotificationSettings> {
-                        NotificationSettingsScreen(PaddingValues())
+                        NotificationSettingsScreen()
                     }
                     composable<SentenceSimilarityTest> {
                         SentenceSimilarityTestScreen()
@@ -744,7 +728,6 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     composable<Account.AppearanceSettings> {
                         val args = it.toRoute<Account.AppearanceSettings>()
                         AppearanceSettingsScreen(
-                            innerPadding,
                             setting = args.setting,
                             onExit = reloadBottomBarPreferences,
                         )
@@ -752,18 +735,17 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     composable<Account.RecommendSettings> {
                         val args = it.toRoute<Account.RecommendSettings>()
                         ContentFilterSettingsScreen(
-                            innerPadding,
                             setting = args.setting,
                         )
                     }
                     composable<Account.SystemAndUpdateSettings> {
-                        SystemAndUpdateSettingsScreen(PaddingValues())
+                        SystemAndUpdateSettingsScreen()
                     }
                     composable<Account.OpenSourceLicenses> {
                         OpenSourceLicensesScreen()
                     }
                     composable<Account.DeveloperSettings> {
-                        DeveloperSettingsScreen(PaddingValues())
+                        DeveloperSettingsScreen()
                     }
                     composable<Account.DeveloperSettings.ColorScheme> {
                         ColorSchemeScreen()

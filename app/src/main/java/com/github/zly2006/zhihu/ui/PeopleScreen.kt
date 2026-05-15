@@ -26,8 +26,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -797,9 +801,10 @@ fun PeopleScreen(
                                 },
                                 isEnd = { uiState.answers.isEnd },
                                 footer = ProgressIndicatorFooter,
-                                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                                contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                     .testTag(PEOPLE_SCREEN_ANSWERS_LIST_TAG),
                                 key = { it.id },
                             ) {
@@ -847,9 +852,10 @@ fun PeopleScreen(
                                 },
                                 isEnd = { uiState.articles.isEnd },
                                 footer = ProgressIndicatorFooter,
-                                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                                contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                     .testTag(PEOPLE_SCREEN_ARTICLES_LIST_TAG),
                                 key = { it.id },
                             ) {
@@ -886,9 +892,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.activities.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_ACTIVITIES_LIST_TAG),
                         ) {
                             FeedCard(
@@ -910,9 +917,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.collections.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_COLLECTIONS_LIST_TAG),
                             key = { it.id },
                         ) { collection ->
@@ -933,9 +941,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.questions.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_QUESTIONS_LIST_TAG),
                             key = { it.id },
                         ) {
@@ -969,9 +978,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.pins.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_PINS_LIST_TAG),
                             key = { it.id },
                         ) {
@@ -1004,9 +1014,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.columns.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_COLUMNS_LIST_TAG),
                             key = { it.id },
                         ) { column ->
@@ -1027,9 +1038,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.followers.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_FOLLOWERS_LIST_TAG),
                             key = { it.id },
                         ) { people ->
@@ -1051,9 +1063,10 @@ fun PeopleScreen(
                             },
                             isEnd = { uiState.following.isEnd },
                             footer = ProgressIndicatorFooter,
-                            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
+                            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                             modifier = Modifier
                                 .fillMaxSize()
+                                .consumeWindowInsets(WindowInsets.navigationBars.asPaddingValues())
                                 .testTag(PEOPLE_SCREEN_FOLLOWING_LIST_TAG),
                             key = { it.id },
                         ) { people ->

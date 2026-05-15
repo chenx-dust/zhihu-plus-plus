@@ -1141,7 +1141,7 @@ fun AppearanceSettingsScreen(
                         Slider(
                             value = listPaneDefaultWidthDp.intValue.toFloat(),
                             onValueChange = { value ->
-                                val snappedWidth = (((value.toInt() + 10 - 280) / 20) * 20 + 280).coerceIn(280, 440)
+                                val snappedWidth = (((value.toInt() + 5 - 280) / 10) * 10 + 280).coerceIn(280, 440)
                                 listPaneDefaultWidthDp.intValue = snappedWidth
                                 preferences.edit {
                                     putInt(
@@ -1151,7 +1151,7 @@ fun AppearanceSettingsScreen(
                                 }
                             },
                             valueRange = 280f..440f,
-                            steps = 7,
+                            steps = 14,
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         )
                     },
