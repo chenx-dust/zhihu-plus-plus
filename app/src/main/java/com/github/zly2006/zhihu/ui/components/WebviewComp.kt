@@ -24,7 +24,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
-import android.os.Bundle
 import android.util.AttributeSet
 import android.util.Log
 import android.view.ActionMode
@@ -34,7 +33,6 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -42,30 +40,19 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.widget.FrameLayout
-import androidx.activity.ComponentDialog
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.core.view.size
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -90,7 +77,6 @@ import com.github.zly2006.zhihu.util.saveImageToGallery
 import com.github.zly2006.zhihu.util.shareImage
 import com.github.zly2006.zhihu.util.signFetchRequest
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -107,7 +93,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -400,7 +385,7 @@ class CustomWebView : WebView {
     }
 
     fun openImage(httpClient: HttpClient, url: String) {
-        OpenImageDislog(context, httpClient, url).show()
+        OpenImageDialog(context, httpClient, url).show()
     }
 
     fun loadZhihu(
@@ -503,90 +488,6 @@ class CustomWebView : WebView {
                 super.onGetContentRect(mode, view, outRect)
             }
         }
-    }
-}
-
-class OpenImageDislog(
-    context: Context,
-    private val httpClient: HttpClient,
-    private val url: String,
-) : ComponentDialog(context) {
-    init {
-        requestWindowFeature(Window.FEATURE_NO_TITLE)
-        setCanceledOnTouchOutside(true)
-        setContentView(
-            ComposeView(context).apply {
-                setContent {
-                    val scope = rememberCoroutineScope()
-                    var showMenu by remember { mutableStateOf(false) }
-                    var menuOffset by remember { mutableStateOf(Offset.Zero) }
-                    val density = androidx.compose.ui.platform.LocalDensity.current
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(androidx.compose.ui.graphics.Color.Black),
-                    ) {
-                        ZoomableAsyncImage(
-                            model = url,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            onClick = { dismiss() },
-                            onLongClick = { offset ->
-                                menuOffset = offset
-                                showMenu = true
-                            },
-                        )
-
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            offset = with(density) {
-                                androidx.compose.ui.unit.DpOffset(
-                                    menuOffset.x.toDp(),
-                                    menuOffset.y.toDp(),
-                                )
-                            },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("保存图片") },
-                                onClick = {
-                                    showMenu = false
-                                    scope.launch {
-                                        saveImageToGallery(context, httpClient, url)
-                                    }
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("分享图片") },
-                                onClick = {
-                                    showMenu = false
-                                    scope.launch {
-                                        shareImage(context, httpClient, url)
-                                    }
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("在浏览器中打开") },
-                                onClick = {
-                                    showMenu = false
-                                    luoTianYiUrlLauncher(context, url.toUri())
-                                },
-                            )
-                        }
-                    }
-                }
-            },
-        )
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        )
-        window?.setBackgroundDrawable(Color.BLACK.toDrawable())
     }
 }
 

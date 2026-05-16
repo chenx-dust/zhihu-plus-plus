@@ -79,6 +79,8 @@ import com.github.zly2006.zhihu.util.parseZhidaSsePayload
 import com.github.zly2006.zhihu.util.prepareArticleExportComment
 import com.github.zly2006.zhihu.util.signFetchRequest
 import com.github.zly2006.zhihu.viewmodel.comment.RootCommentViewModel.Companion.rootCommentUrl
+import com.github.zly2006.zhihu.viewmodel.filter.ContentOpenEventSupport
+import com.github.zly2006.zhihu.viewmodel.filter.ContentOpenFrom
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
 import io.ktor.client.request.header
@@ -406,6 +408,13 @@ class ArticleViewModel(
                                     excerpt = answer.excerpt,
                                 ),
                             )
+                            ContentOpenEventSupport.recordOpenEvent(
+                                context = context,
+                                destination = article,
+                                questionId = answer.question.id,
+                                openFrom = (context as? MainActivity)?.consumePendingContentOpenFrom(article)
+                                    ?: ContentOpenFrom.UNKNOWN,
+                            )
                             // 设置问题回答导航器（如果当前不是收藏夹导航器）
                             if (sharedData.navigator !is CollectionAnswerNavigator) {
                                 val existingNav = sharedData.navigator
@@ -414,19 +423,8 @@ class ArticleViewModel(
                                     is PaginationInfoNavigator -> existingNav.questionId == questionId
                                     else -> false
                                 }
-                                if (isSameQuestion) {
-                                    // 同一问题内导航：更新队列，补充新回答的 prev/next ids
-                                    (existingNav as? PaginationInfoNavigator)
-                                        ?.let { nav -> answer.paginationInfo?.let { nav.updateFromPaginationInfo(it) } }
-                                } else {
-                                    sharedData.navigator = answer.paginationInfo?.let {
-                                        PaginationInfoNavigator(questionId, it)
-                                    } ?: run {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "【回答切换】无法获取分页信息，使用默认回答排序", Toast.LENGTH_SHORT).show()
-                                        }
-                                        QuestionAnswerNavigator(questionId)
-                                    }
+                                if (!isSameQuestion) {
+                                    sharedData.navigator = QuestionAnswerNavigator(questionId)
                                 }
                             }
                             sharedData.navigator?.pushAnswer(toCachedContent(sourceLabel = sharedData.navigator?.sourceName ?: "此问题"))
@@ -475,6 +473,12 @@ class ArticleViewModel(
                                     avatarSrc = article.author.avatarUrl,
                                     excerpt = article.excerpt,
                                 ),
+                            )
+                            ContentOpenEventSupport.recordOpenEvent(
+                                context = context,
+                                destination = this@ArticleViewModel.article,
+                                openFrom = (context as? MainActivity)?.consumePendingContentOpenFrom(this@ArticleViewModel.article)
+                                    ?: ContentOpenFrom.UNKNOWN,
                             )
                         } else {
                             content = "<h1>文章不存在</h1>"

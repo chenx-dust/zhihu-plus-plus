@@ -32,6 +32,8 @@ import com.github.zly2006.zhihu.data.target
 import com.github.zly2006.zhihu.util.signFetchRequest
 import com.github.zly2006.zhihu.viewmodel.ArticleViewModel.CachedAnswerContent
 import com.github.zly2006.zhihu.viewmodel.CollectionContentViewModel
+import com.github.zly2006.zhihu.viewmodel.filter.ContentOpenEventSupport
+import com.github.zly2006.zhihu.viewmodel.filter.ContentType
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -158,25 +160,121 @@ abstract class AnswerNavigator(
 class QuestionAnswerNavigator(
     val questionId: Long,
 ) : AnswerNavigator("此问题") {
-    private val destinations = ArrayDeque<Feed>()
+    private val destinations = ArrayDeque<Article>()
+    private val previousQueue = mutableStateListOf<Article>()
     private var nextUrl: String = ""
+    private val enqueuedNextIds = mutableSetOf<Long>()
+    private val enqueuedPrevIds = mutableSetOf<Long>()
+    private val knownOpenedIds = mutableSetOf<Long>()
+
+    override val previousAnswerPreview: CachedAnswerContent?
+        get() {
+            val article = previousQueue.firstOrNull() ?: return null
+            return CachedAnswerContent(
+                article = article,
+                title = article.title,
+                authorName = article.authorName,
+                authorBio = article.authorBio,
+                authorAvatarUrl = article.avatarSrc ?: "",
+                content = "",
+                voteUpCount = 0,
+                commentCount = 0,
+                sourceLabel = sourceName,
+            )
+        }
+
+    private suspend fun fetchCached(context: Context, article: Article): CachedAnswerContent? {
+        val detail = ContentDetailCache.getOrFetch(context, article) as? DataHolder.Answer ?: return null
+        return CachedAnswerContent(
+            article = article,
+            title = detail.question.title,
+            authorName = detail.author.name,
+            authorBio = detail.author.headline,
+            authorAvatarUrl = detail.author.avatarUrl,
+            content = detail.content,
+            voteUpCount = detail.voteupCount,
+            commentCount = detail.commentCount,
+            createdAt = detail.createdTime,
+            updatedAt = detail.updatedTime,
+            ipInfo = detail.ipInfo,
+            sourceLabel = sourceName,
+        )
+    }
 
     private suspend fun ensureDestinations(context: Context, currentArticleId: Long) {
         if (destinations.isNotEmpty()) return
-        val url = nextUrl.ifEmpty { "https://www.zhihu.com/api/v4/questions/$questionId/feeds?limit=2" }
-        val jojo = AccountData.fetchGet(context, url) { signFetchRequest() } ?: return
-        val data = AccountData.decodeJson<List<Feed>>(jojo["data"] ?: return)
-        nextUrl = jojo["paging"]
-            ?.jsonObject
-            ?.get("next")
-            ?.jsonPrimitive
-            ?.content ?: ""
-        destinations.addAll(
-            data.filter { feed ->
-                val dest = feed.target?.navDestination
-                dest is Article && dest.id != currentArticleId
-            },
-        )
+        val historyIds = answerHistory.map { it.article.id }.toSet()
+        while (destinations.isEmpty()) {
+            val url = nextUrl.ifEmpty { "https://www.zhihu.com/api/v4/questions/$questionId/feeds?limit=6" }
+            val jojo = AccountData.fetchGet(context, url) { signFetchRequest() } ?: return
+            val data = AccountData.decodeJson<List<Feed>>(jojo["data"] ?: return)
+            nextUrl = jojo["paging"]
+                ?.jsonObject
+                ?.get("next")
+                ?.jsonPrimitive
+                ?.content ?: ""
+            val candidates = data.mapNotNull { feed -> feed.target?.navDestination as? Article }
+            val idsToLookup = candidates
+                .asSequence()
+                .filter { it.type == ArticleType.Answer }
+                .map { it.id }
+                .filter { id ->
+                    id != currentArticleId &&
+                        id !in historyIds &&
+                        id !in enqueuedPrevIds &&
+                        id !in enqueuedNextIds &&
+                        id !in knownOpenedIds
+                }.toList()
+            if (idsToLookup.isNotEmpty()) {
+                val openedContentIds = ContentOpenEventSupport.getAlreadyOpenedContentIds(
+                    context = context,
+                    content = idsToLookup.map { ContentType.ANSWER to it.toString() },
+                )
+                knownOpenedIds += openedContentIds.mapNotNull { key ->
+                    key.substringAfter(':', "").toLongOrNull()
+                }
+            }
+            val partition = ContentOpenEventSupport.partitionQuestionAnswerCandidates(
+                candidates = candidates,
+                openedAnswerIds = knownOpenedIds,
+                currentArticleId = currentArticleId,
+                historyIds = historyIds,
+                previousIds = enqueuedPrevIds,
+                nextIds = enqueuedNextIds,
+            )
+            partition.previousCandidates.forEach { article ->
+                if (enqueuedPrevIds.add(article.id)) {
+                    previousQueue.add(0, article)
+                }
+            }
+            partition.nextCandidates.forEach { article ->
+                if (enqueuedNextIds.add(article.id)) {
+                    destinations.addLast(article)
+                }
+            }
+            if (nextUrl.isEmpty()) return
+        }
+    }
+
+    override suspend fun loadPrevious(context: Context): CachedAnswerContent? {
+        val prefetched = previousAnswerContent
+        if (prefetched != null) {
+            previousAnswerContent = null
+            previousQueue.removeFirstOrNull()
+            return insertPrevious(prefetched)
+        }
+        val article = previousQueue.removeFirstOrNull() ?: return null
+        val cached = try {
+            fetchCached(context, article)
+        } catch (e: Exception) {
+            Log.w("QuestionAnswerNavigator", "Failed to load previous answer content", e)
+            null
+        }
+        if (cached == null) {
+            previousQueue.add(0, article)
+            return null
+        }
+        return insertPrevious(cached)
     }
 
     override suspend fun loadNext(context: Context): Article? {
@@ -187,14 +285,23 @@ class QuestionAnswerNavigator(
             return article
         }
         ensureDestinations(context, -1L)
-        return (destinations.removeFirstOrNull()?.target?.navDestination as? Article)
+        return destinations.removeFirstOrNull()
+    }
+
+    override suspend fun prefetchPrevious(context: Context, currentArticleId: Long) {
+        if (previousAnswerContent != null) return
+        val article = previousQueue.firstOrNull() ?: return
+        try {
+            previousAnswerContent = fetchCached(context, article)
+        } catch (e: Exception) {
+            Log.w("QuestionAnswerNavigator", "Failed to pre-load previous answer content", e)
+        }
     }
 
     override suspend fun prefetchNext(context: Context, currentArticleId: Long) {
         if (nextAnswerContent != null) return
         ensureDestinations(context, currentArticleId)
-        val nextFeed = destinations.firstOrNull() ?: return
-        val nextDest = nextFeed.target?.navDestination as? Article ?: return
+        val nextDest = destinations.firstOrNull() ?: return
         if (nextDest.type != ArticleType.Answer) return
         try {
             val detail = ContentDetailCache.getOrFetch(context, nextDest) as? DataHolder.Answer ?: return

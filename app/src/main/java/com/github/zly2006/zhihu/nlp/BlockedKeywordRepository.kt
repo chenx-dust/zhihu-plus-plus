@@ -149,12 +149,12 @@ class BlockedKeywordRepository(
     }
 
     /**
-     * 检查内容是否应该被NLP语义屏蔽（标题+摘要+内容）
-     * 标题权重更高，会被重复分析以提高影响力
+     * 检查内容快照是否应该被 NLP 语义屏蔽。
+     * 当前实现只使用标题和摘要参与匹配，正文参数暂未纳入加权文本。
      * @param title 标题
      * @param excerpt 摘要
-     * @param content 正文内容
-     * @param threshold 相似度阈值，默认0.3
+     * @param content 正文内容，当前保留给后续扩展
+     * @param threshold 相似度阈值，默认 0.8
      * @return Pair<是否屏蔽, 匹配的关键词列表>
      */
     suspend fun checkNLPBlockingWithWeight(
@@ -168,13 +168,14 @@ class BlockedKeywordRepository(
         val nlpKeywords = getNLPSemanticKeywords()
         if (nlpKeywords.isEmpty()) return Pair(false, emptyList())
 
-        // 获取所有NLP短语
+        // 获取所有 NLP 短语
         val phrases = nlpKeywords.map { it.keyword }
 
-        // 构建加权文本：标题重复3次以提高权重
+        // 当前只用标题和摘要构造匹配文本；不要把这里误认为和 KeywordAnalyzer 一样会重复标题或拼接正文。
         val weightedText = buildString {
             append(title)
-            // 添加摘要
+            append(" ")
+            // 追加摘要，补充主题上下文
             if (!excerpt.isNullOrBlank()) {
                 append(excerpt)
                 append(" ")

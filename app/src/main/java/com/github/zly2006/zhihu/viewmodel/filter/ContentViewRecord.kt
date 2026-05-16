@@ -21,8 +21,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * 内容查看记录实体
- * 用于记录用户查看内容的次数和是否有交互，以便过滤重复展示的无交互内容
+ * 内容曝光记录实体。
+ * 记录某个内容身份在 feed 中被展示/交互的次数，用于“重复曝光但一直不点开”的 feed 过滤规则。
  */
 @Entity(tableName = ContentViewRecord.TABLE_NAME)
 data class ContentViewRecord(
@@ -37,7 +37,7 @@ data class ContentViewRecord(
 ) {
     companion object {
         const val TABLE_NAME = "content_view_records"
-        const val MAX_VIEW_COUNT_WITHOUT_INTERACTION = 2 // 超过此次数且无交互则过滤
+        const val MAX_VIEW_COUNT_WITHOUT_INTERACTION = 2 // 展示次数大于此值且无交互时，后续 feed 过滤会拦截
 
         // 生成主键的辅助方法
         fun generateId(targetType: String, targetId: String): String = "$targetType:$targetId"

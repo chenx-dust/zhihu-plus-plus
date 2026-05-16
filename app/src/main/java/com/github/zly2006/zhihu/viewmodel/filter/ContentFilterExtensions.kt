@@ -27,7 +27,6 @@ import com.github.zly2006.zhihu.data.ContentDetailCache
 import com.github.zly2006.zhihu.data.DataHolder
 import com.github.zly2006.zhihu.data.target
 import com.github.zly2006.zhihu.navigation.Article
-import com.github.zly2006.zhihu.navigation.ArticleType
 import com.github.zly2006.zhihu.navigation.Pin
 import com.github.zly2006.zhihu.navigation.Question
 import com.github.zly2006.zhihu.nlp.BlockedKeywordRepository
@@ -39,12 +38,15 @@ import kotlinx.serialization.json.Json
 import org.jsoup.Jsoup
 
 /**
- * 内容过滤扩展工具
- * 提供简化的API用于在UI层集成内容过滤功能
+ * Feed 过滤扩展工具。
+ * 只负责对 [FeedDisplayItem] 列表编排过滤流程、补齐过滤所需上下文，并写入 feed 级屏蔽历史。
+ * 这里不负责定义内容级规则本身，也不负责详情页打开事件；那些逻辑分别在 blocklist/NLP 仓库和已读事件支持类里。
  */
 object ContentFilterExtensions {
     /**
-     * 过滤所需的内容数据
+     * 从 feed item 提炼出的内容快照。
+     * 还可以后续再添加fetch到的详细信息，精确判断。
+     * 这个结构只在 feed 过滤流水线内部流转，用来承接关键词/NLP/作者/主题等内容级规则。
      */
     data class FilterableContent(
         val title: String,
@@ -62,9 +64,7 @@ object ContentFilterExtensions {
         val navDestinationJson: String? = null,
     )
 
-    /**
-     * 检查是否启用了内容过滤功能
-     */
+    /** 检查是否启用了 feed 已读/低质过滤总开关。 */
     fun isContentFilterEnabled(context: Context): Boolean {
         val preferences = context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
         return preferences.getBoolean("enableContentFilter", true)
@@ -119,8 +119,8 @@ object ContentFilterExtensions {
     }
 
     /**
-     * 在内容显示时记录展示次数
-     * 建议在RecyclerView的onBindViewHolder或Compose的LaunchedEffect中调用
+     * 在 feed 中记录某个内容身份被展示了一次。
+     * 这里记录的是“内容在 feed 中曝光”，不是内容详情页被打开。
      */
     suspend fun recordContentDisplay(context: Context, targetType: String, targetId: String) {
         if (!isContentFilterEnabled(context)) return
@@ -136,8 +136,8 @@ object ContentFilterExtensions {
     }
 
     /**
-     * 在用户与内容交互时记录交互行为
-     * 建议在用户点击、点赞、评论等操作时调用
+     * 在 feed 中记录用户对某个内容身份发生过交互。
+     * 这里的交互用于放宽已读/重复曝光过滤，不等同于详情页打开事件表。
      */
     suspend fun recordContentInteraction(context: Context, targetType: String, targetId: String) {
         if (!isContentFilterEnabled(context)) return
@@ -169,8 +169,8 @@ object ContentFilterExtensions {
     }
 
     /**
-     * 前台应用已读过滤（仅访问本地数据库，不依赖网络）。
-     * 规则：发布者未被关注且已读过则过滤，并写入屏蔽历史。
+     * 对首页前台 feed 应用“已读/低质”过滤。
+     * 这里只看本地曝光记录和当前卡片信息，不做关键词/NLP 等内容级规则判断。
      */
     suspend fun applyForegroundReadFilterToDisplayItems(
         context: Context,
@@ -223,11 +223,11 @@ object ContentFilterExtensions {
     }
 
     /**
-     * 对FeedDisplayItem列表应用内容过滤。
-     * 包括广告检测、关键词屏蔽、NLP语义屏蔽和用户屏蔽。
-     * 已读过滤已在前台通过[applyForegroundReadFilterToDisplayItems]执行。
+     * 对 [FeedDisplayItem] 列表应用 feed 过滤流水线。
+     * 输入和输出都是 feed item；其中广告、关键词、NLP、作者、主题等规则，作用在从 feed 提取出的内容快照上。
+     * 已读/重复曝光过滤已在前台通过 [applyForegroundReadFilterToDisplayItems] 处理。
      *
-     * 在吃💩模式下，只会返回广告。
+     * 在吃💩模式下，只返回广告 feed。
      */
     suspend fun applyContentFilterToDisplayItems(
         context: Context,
@@ -386,8 +386,8 @@ object ContentFilterExtensions {
     }
 
     /**
-     * 对FilterableContent列表进行用户自定义规则屏蔽
-     * @param blocked 收集被屏蔽内容及原因，用于后续持久化
+     * 对从 feed 提取出的内容快照应用内容级规则。
+     * @param blocked 收集被屏蔽的 feed 内容快照及原因，供后续写入 feed 屏蔽历史
      */
     private suspend fun filterContents(
         context: Context,
@@ -490,15 +490,9 @@ object ContentFilterExtensions {
     )
 
     private fun FeedDisplayItem.resolveContentIdentity(): ContentIdentity = when (val dest = navDestination) {
-        is Article -> {
-            val type = when (dest.type) {
-                ArticleType.Answer -> ContentType.ANSWER
-                ArticleType.Article -> ContentType.ARTICLE
-            }
-            ContentIdentity(type, dest.id.toString())
-        }
-        is Question -> {
-            ContentIdentity(ContentType.QUESTION, dest.questionId.toString())
+        is Article, is Question, is Pin -> {
+            val identity = ContentOpenEventSupport.toTrackedContentIdentity(dest)
+            ContentIdentity(identity!!.type, identity.id)
         }
         else -> {
             ContentIdentity("unknown", navDestination.hashCode().toString())
@@ -556,9 +550,7 @@ object ContentFilterExtensions {
         }
     }
 
-    /**
-     * 从raw content中提取主题ID列表
-     */
+    /** 从内容实体中提取主题 ID 列表，供 feed 过滤阶段的主题规则使用。 */
     private fun extractTopicIds(raw: DataHolder.Content): List<String>? = when (raw) {
         is DataHolder.Answer -> raw.question.topics.map { it.id }
         is DataHolder.Question -> raw.topics.map { it.id }

@@ -21,8 +21,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * 被屏蔽内容记录实体
- * 记录被NLP语义匹配屏蔽的内容，供用户复查
+ * 被屏蔽内容记录实体。
+ * 这里只记录内容级的 NLP 语义匹配结果，不代表某条 feed 卡片本身的完整屏蔽历史。
  */
 @Entity(tableName = BlockedContentRecord.TABLE_NAME)
 data class BlockedContentRecord(
@@ -34,7 +34,7 @@ data class BlockedContentRecord(
     val authorName: String?, // 作者名称
     val authorId: String?, // 作者ID
     val blockedTime: Long = System.currentTimeMillis(), // 屏蔽时间
-    val blockReason: String, // 屏蔽原因JSON（包含匹配的关键词和相似度）
+    val blockReason: String, // 人类可读屏蔽原因
     val matchedKeywords: String, // 匹配的关键词列表JSON格式：[{"keyword":"xxx","similarity":0.8}]
 ) {
     companion object {

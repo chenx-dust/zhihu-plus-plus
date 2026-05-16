@@ -21,8 +21,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * 首页屏蔽 Feed 记录实体
- * 记录所有被屏蔽的首页 Feed，包括质量过滤、关键词、用户、主题、NLP 等各类屏蔽原因
+ * Feed 屏蔽记录实体。
+ * 记录的是某条 feed 卡片为何没有进入首页展示结果，包含广告、已读、关键词、作者、主题、NLP 等 feed 阶段原因。
  */
 @Entity(tableName = BlockedFeedRecord.TABLE_NAME)
 data class BlockedFeedRecord(
