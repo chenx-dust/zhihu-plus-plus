@@ -34,6 +34,7 @@ import com.github.zly2006.zhihu.data.GroupFeed
 import com.github.zly2006.zhihu.data.HotListFeed
 import com.github.zly2006.zhihu.data.MomentsFeed
 import com.github.zly2006.zhihu.data.QuestionFeedCard
+import com.github.zly2006.zhihu.data.SegmentInfoParagraph
 import com.github.zly2006.zhihu.data.actionText
 import com.github.zly2006.zhihu.data.target
 import com.github.zly2006.zhihu.navigation.Article
@@ -60,18 +61,21 @@ abstract class BaseFeedViewModel : PaginationViewModel<Feed>(typeOf<Feed>()) {
         val navDestination: NavDestination? = feed?.target?.navDestination,
         val avatarSrc: String? = null,
         val authorName: String? = null,
+        val authorBadgeV2: DataHolder.BadgeV2? = null,
         val isFiltered: Boolean = false,
         val content: String? = null,
         var raw: DataHolder.Content? = null,
         val localContentId: String? = null,
         val localFeedId: String? = null,
         val localReason: String? = null,
+        val segmentInfos: List<SegmentInfoParagraph> = emptyList(),
+        val segmentSourceUrl: String? = null,
     ) {
         val stableKey: String
             get() = localFeedId ?: localContentId ?: navDestination?.toString() ?: "$title|${summary.orEmpty()}|$details"
     }
 
-    override fun processResponse(context: Context, data: List<Feed>, rawData: JsonArray) {
+    override suspend fun processResponse(context: Context, data: List<Feed>, rawData: JsonArray) {
         super.processResponse(context, data, rawData)
         addDisplayItems(data.flatten().map { createDisplayItem(context, it) })
     }
@@ -129,7 +133,18 @@ abstract class BaseFeedViewModel : PaginationViewModel<Feed>(typeOf<Feed>()) {
                                     .joinToString(" · "),
                                 avatarSrc = feed.target?.author?.avatarUrl,
                                 authorName = feed.target?.author?.name,
+                                authorBadgeV2 = feed.target?.author?.badgeV2,
                                 feed = feed,
+                                segmentInfos = when (val target = feed.target) {
+                                    is Feed.AnswerTarget -> target.segmentInfos
+                                    is Feed.ArticleTarget -> target.segmentInfos
+                                    else -> emptyList()
+                                },
+                                segmentSourceUrl = when (val target = feed.target) {
+                                    is Feed.AnswerTarget -> "https://www.zhihu.com/question/${target.question.id}/answer/${target.id}"
+                                    is Feed.ArticleTarget -> "https://zhuanlan.zhihu.com/p/${target.id}"
+                                    else -> null
+                                },
                             )
                         }
 
@@ -140,6 +155,7 @@ abstract class BaseFeedViewModel : PaginationViewModel<Feed>(typeOf<Feed>()) {
                                 details = feed.target!!.detailsText,
                                 avatarSrc = feed.target?.author?.avatarUrl,
                                 authorName = feed.target?.author?.name,
+                                authorBadgeV2 = feed.target?.author?.badgeV2,
                                 feed = feed,
                             )
                         }

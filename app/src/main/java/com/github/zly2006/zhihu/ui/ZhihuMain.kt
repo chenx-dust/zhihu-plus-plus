@@ -30,6 +30,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -38,6 +39,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
@@ -46,6 +48,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
@@ -89,6 +94,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -100,8 +106,10 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -127,6 +135,7 @@ import com.github.zly2006.zhihu.navigation.History
 import com.github.zly2006.zhihu.navigation.Home
 import com.github.zly2006.zhihu.navigation.HotList
 import com.github.zly2006.zhihu.navigation.LocalNavigator
+import com.github.zly2006.zhihu.navigation.MainTabs
 import com.github.zly2006.zhihu.navigation.NavDestination
 import com.github.zly2006.zhihu.navigation.Navigator
 import com.github.zly2006.zhihu.navigation.Notification
@@ -153,17 +162,34 @@ import com.github.zly2006.zhihu.ui.subscreens.navDestinationFromName
 import com.github.zly2006.zhihu.ui.subscreens.normalizeBottomBarSelection
 import com.github.zly2006.zhihu.ui.subscreens.resolveValidStartDestinationKey
 import com.github.zly2006.zhihu.viewmodel.ArticleViewModel
+import com.github.zly2006.zhihu.viewmodel.filter.ContentOpenFrom
+import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 import com.github.zly2006.zhihu.ui.NavHost as MyNavHost
 
 const val SURVEY_URL = "https://v.wjx.cn/vm/Ppfw2R4.aspx#"
 
+private sealed class MainTabPage(
+    val bottomDestination: TopLevelDestination,
+    val key: String,
+) {
+    data object HomePage : MainTabPage(Home, "home")
+
+    data object FollowRecommendPage : MainTabPage(Follow, "follow_recommend")
+
+    data object FollowDynamicPage : MainTabPage(Follow, "follow_dynamic")
+
+    data object HotListPage : MainTabPage(HotList, "hotlist")
+
+    data object DailyPage : MainTabPage(Daily, "daily")
+
+    data object OnlineHistoryPage : MainTabPage(OnlineHistory, "online_history")
+
+    data object AccountPage : MainTabPage(Account, "account")
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3ComponentOverrideApi::class)
 @SuppressLint("RestrictedApi")
-@OptIn(
-    ExperimentalMaterial3AdaptiveApi::class,
-    ExperimentalMaterial3AdaptiveNavigationSuiteApi::class,
-    ExperimentalMaterial3ComponentOverrideApi::class,
-)
 @Composable
 fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
     val bottomPadding = ScaffoldDefaults.contentWindowInsets.asPaddingValues().calculateBottomPadding()
@@ -218,6 +244,8 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
     }
     val isSinglePaneWindow = paneDirective.maxHorizontalPartitions == 1
     var isSinglePaneListDetailShowingDetail by rememberSaveable { mutableStateOf(false) }
+
+    var scrollToTopTrigger by remember { mutableIntStateOf(0) }
     // 滚动时自动隐藏底部导航栏
     var isBottomBarVisible by remember { mutableStateOf(true) }
     val bottomBarScrollConnection = remember {
@@ -253,7 +281,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
             },
         )
     }
-    var scrollToTopTrigger by remember { mutableIntStateOf(0) }
+
     val allBottomBarItems = listOf(
         Triple(Home, "主页", Icons.Filled.Home),
         Triple(Follow, "关注", if (duo3NavStyle) Icons.Filled.Group else Icons.Filled.PersonAddAlt1),
@@ -264,87 +292,89 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
     )
     val bottomBarItems = allBottomBarItems.filter { it.first.name in selectedBottomBarItemKeys }
 
-    fun topLevelKey(destination: NavDestination): String = (destination as? TopLevelDestination)?.name ?: Home.name
-    var currentTopLevelDestinationKey by rememberSaveable { mutableStateOf(topLevelKey(startDestination)) }
-
-    when {
-        navEntry?.hasRoute(Home::class) == true -> currentTopLevelDestinationKey = Home.name
-        navEntry?.hasRoute(Follow::class) == true -> currentTopLevelDestinationKey = Follow.name
-        navEntry?.hasRoute(HotList::class) == true -> currentTopLevelDestinationKey = HotList.name
-        navEntry?.hasRoute(Daily::class) == true -> currentTopLevelDestinationKey = Daily.name
-        navEntry?.hasRoute(OnlineHistory::class) == true -> currentTopLevelDestinationKey = OnlineHistory.name
-        navEntry?.hasRoute(Account::class) == true -> currentTopLevelDestinationKey = Account.name
-    }
-
-    // 获取页面索引的函数
-    fun getPageIndex(route: androidx.navigation.NavDestination): Int = when {
-        route.hasRoute<Home>() -> 0
-        route.hasRoute<Follow>() -> 1
-        route.hasRoute<HotList>() -> 2
-        route.hasRoute<Daily>() -> 3
-        route.hasRoute<OnlineHistory>() -> 4
-        route.hasRoute<Account>() -> 5
-        else -> -1
-    }
-
-    // 通用动画创建函数
-    @Suppress("KotlinConstantConditions")
-    fun createSlideAnimation(
-        isEnter: Boolean,
-        isPop: Boolean,
-        fromIndex: Int,
-        toIndex: Int,
-        useVerticalAnimation: Boolean = false,
-    ): Any {
-        // 如果不是一级页面之间的切换，使用默认动画
-        if (fromIndex == -1 || toIndex == -1) {
-            when {
-                isPop && isEnter -> {
-                    return EnterTransition.None
-                }
-
-                isPop && !isEnter -> {
-                    return if (useVerticalAnimation) {
-                        slideOutVertically(tween(300)) { it }
-                    } else {
-                        slideOutHorizontally(tween(300)) { it }
-                    } + fadeOut(tween(300))
-                }
-
-                !isPop && isEnter -> {
-                    return if (useVerticalAnimation) {
-                        slideInVertically(tween(300)) { it }
-                    } else {
-                        slideInHorizontally(tween(300)) { it }
-                    }
-                }
-
-                !isPop && !isEnter -> {
-                    return ExitTransition.None
-                }
+    val mainTabPages = remember(bottomBarItems) {
+        bottomBarItems.flatMap { item ->
+            when (item.first) {
+                Home -> listOf(MainTabPage.HomePage)
+                Follow -> listOf(MainTabPage.FollowRecommendPage, MainTabPage.FollowDynamicPage)
+                HotList -> listOf(MainTabPage.HotListPage)
+                Daily -> listOf(MainTabPage.DailyPage)
+                OnlineHistory -> listOf(MainTabPage.OnlineHistoryPage)
+                Account -> listOf(MainTabPage.AccountPage)
+                else -> emptyList()
             }
         }
-        // 一级页面之间的切换
-        val offset = when {
-            // 向右滑动
-            toIndex > fromIndex -> if (isEnter) 1 else -1
-            // 向左滑动
-            toIndex < fromIndex -> if (isEnter) -1 else 1
-            // 同一页面
-            else -> return if (isEnter) EnterTransition.None else ExitTransition.None
+    }
+
+    fun pageIndexForDestination(destination: TopLevelDestination): Int = mainTabPages
+        .indexOfFirst {
+            it.bottomDestination::class == destination::class
+        }.takeIf { it >= 0 } ?: mainTabPages
+        .indexOfFirst {
+            it.bottomDestination::class == startDestination::class
+        }.takeIf { it >= 0 } ?: 0
+
+    var lastFollowPageKey by rememberSaveable { mutableStateOf(MainTabPage.FollowRecommendPage.key) }
+    val mainPagerState = rememberPagerState(
+        initialPage = pageIndexForDestination(startDestination),
+        pageCount = { mainTabPages.size },
+    )
+    val coroutineScope = rememberCoroutineScope()
+
+    fun currentMainTabPage(): MainTabPage? = mainTabPages.getOrNull(mainPagerState.currentPage)
+    var currentMainTabDestination by remember { mutableStateOf(startDestination) }
+
+    fun pageIndexForBottomDestination(destination: TopLevelDestination): Int {
+        if (destination == Follow) {
+            val rememberedFollowPage = mainTabPages.indexOfFirst { it.key == lastFollowPageKey }
+            if (rememberedFollowPage >= 0) return rememberedFollowPage
         }
-        return if (isEnter) {
-            if (useVerticalAnimation) {
-                slideInVertically(tween(300)) { it * offset }
+        return pageIndexForDestination(destination)
+    }
+
+    fun navigateTopLevel(destination: TopLevelDestination) {
+        val targetPage = pageIndexForBottomDestination(destination)
+        coroutineScope.launch {
+            mainPagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    LaunchedEffect(mainPagerState.currentPage, mainTabPages) {
+        when (val page = currentMainTabPage()) {
+            MainTabPage.FollowRecommendPage, MainTabPage.FollowDynamicPage -> lastFollowPageKey = page.key
+            else -> {}
+        }
+        currentMainTabPage()?.bottomDestination?.let { destination ->
+            currentMainTabDestination = destination
+            activity.setCurrentMainTabOpenFrom(destination.openFrom)
+        }
+    }
+
+    val mainTabNavigationTarget = activity.mainTabNavigationTarget
+    LaunchedEffect(mainTabNavigationTarget, mainTabPages) {
+        mainTabNavigationTarget?.let { destination ->
+            // MainActivity maps legacy top-level route requests onto MainTabs. Consume that request
+            // here so callers such as deeplinks can still select Home/Follow/etc. without pushing
+            // those old routes onto the back stack.
+            mainPagerState.scrollToPage(pageIndexForBottomDestination(destination))
+            activity.consumeMainTabNavigationTarget(destination)
+        }
+    }
+
+    LaunchedEffect(mainTabPages) {
+        if (mainTabPages.isNotEmpty()) {
+            val currentDestinationStillVisible = mainTabPages.any {
+                it.bottomDestination::class == currentMainTabDestination::class
+            }
+            val targetDestination = if (currentDestinationStillVisible) {
+                currentMainTabDestination
             } else {
-                slideInHorizontally(tween(300)) { it * offset }
-            } + fadeIn(tween(300))
-        } else {
-            if (useVerticalAnimation) {
-                slideOutVertically(tween(300)) { it * offset }
-            } else {
-                slideOutHorizontally(tween(300)) { it * offset }
-            } + fadeOut(tween(300))
+                startDestination
+            }
+            val targetPage = pageIndexForDestination(targetDestination)
+            if (mainPagerState.currentPage != targetPage || mainPagerState.currentPage !in mainTabPages.indices) {
+                mainPagerState.scrollToPage(targetPage)
+            }
         }
     }
 
@@ -446,32 +476,32 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
         LocalNavigationBarOverride provides myCustomOverride,
         LocalNavigationRailOverride provides myCustomOverride,
     ) {
+        val currentBottomDestination = mainTabPages
+            .getOrNull(mainPagerState.targetPage)
+            ?.bottomDestination
+        val innerPadding = PaddingValues(
+            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+            bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+        )
         NavigationSuiteScaffold(
-            modifier = modifier,
+            modifier = modifier
+                .nestedScroll(bottomBarScrollConnection)
+                .semantics { testTagsAsResourceId = true },
             state = navigationSuiteState,
             navigationSuiteItems = {
                 bottomBarItems.forEach { item ->
                     val destination = item.first
                     val label = item.second
                     val icon = item.third
+                    val tag = "nav_tab_${destination.name.lowercase()}"
                     item(
-                        selected = currentTopLevelDestinationKey == destination.name,
+                        currentBottomDestination?.let { it::class == destination::class } == true,
                         onClick = {
-                            if (!navEntry.hasRoute(destination::class)) {
-                                currentTopLevelDestinationKey = destination.name
-                                navController.navigate(destination) {
-                                    popUpTo(startDestination)
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                            if (currentBottomDestination?.let { it::class == destination::class } != true) {
+                                navigateTopLevel(destination)
                             } else if (tapToScrollToTopEnabled) {
                                 scrollToTopTrigger++
                             }
-                        },
-                        alwaysShowLabel = duo3NavStyle,
-                        colors = itemColors,
-                        icon = {
-                            Icon(icon, contentDescription = label)
                         },
                         label = {
                             if (duo3NavStyle) {
@@ -486,89 +516,72 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                                 )
                             }
                         },
+                        alwaysShowLabel = duo3NavStyle,
+                        colors = itemColors,
+                        icon = {
+                            Icon(icon, contentDescription = label)
+                        },
+                        modifier = (if (duo3NavStyle) Modifier.padding(top = 4.dp) else Modifier).testTag(tag),
                     )
                 }
             },
         ) {
-            val innerPadding = PaddingValues(
-                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
-            )
             CompositionLocalProvider(
                 LocalNavigator provides Navigator(
-                    onNavigate = activity::navigate,
+                    onNavigate = { destination ->
+                        activity.navigate(destination)
+                    },
                     onNavigateBack = navController::popBackStack,
                 ),
             ) {
                 MyNavHost(
                     navController,
-                    modifier = if (isSinglePaneWindow && autoHideBottomBar) {
-                        modifier.nestedScroll(bottomBarScrollConnection)
-                    } else {
-                        modifier
-                    },
-                    startDestination = startDestination,
+                    modifier = Modifier,
+                    startDestination = MainTabs,
                     enterTransition = {
-                        val fromIndex = getPageIndex(initialState.destination)
-                        val toIndex = getPageIndex(targetState.destination)
-                        createSlideAnimation(
-                            isEnter = true,
-                            isPop = false,
-                            fromIndex = fromIndex,
-                            toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
-                        ) as EnterTransition
+                        slideInHorizontally(tween(300)) { it }
                     },
                     exitTransition = {
-                        val fromIndex = getPageIndex(initialState.destination)
-                        val toIndex = getPageIndex(targetState.destination)
-                        createSlideAnimation(
-                            isEnter = false,
-                            isPop = false,
-                            fromIndex = fromIndex,
-                            toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
-                        ) as ExitTransition
+                        ExitTransition.None
                     },
                     popEnterTransition = {
-                        val fromIndex = getPageIndex(initialState.destination)
-                        val toIndex = getPageIndex(targetState.destination)
-                        createSlideAnimation(
-                            isEnter = true,
-                            isPop = true,
-                            fromIndex = fromIndex,
-                            toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
-                        ) as EnterTransition
+                        EnterTransition.None
                     },
                     popExitTransition = {
-                        val fromIndex = getPageIndex(initialState.destination)
-                        val toIndex = getPageIndex(targetState.destination)
-                        createSlideAnimation(
-                            isEnter = false,
-                            isPop = true,
-                            fromIndex = fromIndex,
-                            toIndex = toIndex,
-                            useVerticalAnimation = !navSuiteType.isNavigationBar(),
-                        ) as ExitTransition
+                        slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300))
                     },
                 ) {
-                    composable<Home> {
+                    composable<MainTabs> {
                         ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
-                            HomeScreen(
+                            MainTabsPager(
+                                pagerState = mainPagerState,
+                                pages = mainTabPages,
                                 scrollToTopTrigger = scrollToTopTrigger,
                                 innerPadding = innerPadding,
+                                onFollowTabSelected = { followTabIndex ->
+                                    val page = if (followTabIndex == 0) {
+                                        MainTabPage.FollowRecommendPage
+                                    } else {
+                                        MainTabPage.FollowDynamicPage
+                                    }
+                                    val index = mainTabPages.indexOfFirst { it.key == page.key }
+                                    if (index >= 0) {
+                                        coroutineScope.launch {
+                                            mainPagerState.animateScrollToPage(index)
+                                        }
+                                    }
+                                },
                                 selectionState = selectionState,
                             )
                         }
                     }
                     composable<Question> { navEntry ->
+                        val question: Question = navEntry.toRoute()
                         ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
-                            val question: Question = navEntry.toRoute()
                             QuestionScreen(
                                 question = question,
                                 selectionState = selectionState,
@@ -582,10 +595,17 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             } catch (_: Exception) {
                                 null
                             }
-                            articleEnterTransition(
-                                sharedData?.answerTransitionDirection
-                                    ?: ArticleViewModel.AnswerTransitionDirection.DEFAULT,
-                            )
+                            when (sharedData?.answerTransitionDirection) {
+                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_NEXT ->
+                                    slideInVertically(tween(300)) { it } + fadeIn(tween(300))
+                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_PREVIOUS ->
+                                    slideInVertically(tween(300)) { -it } + fadeIn(tween(300))
+                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_NEXT ->
+                                    slideInHorizontally(tween(300)) { it } + fadeIn(tween(300))
+                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_PREVIOUS ->
+                                    slideInHorizontally(tween(300)) { -it } + fadeIn(tween(300))
+                                else -> slideInHorizontally(tween(300)) { it }
+                            }
                         },
                         exitTransition = {
                             val sharedData = try {
@@ -594,10 +614,17 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             } catch (_: Exception) {
                                 null
                             }
-                            articleExitTransition(
-                                sharedData?.answerTransitionDirection
-                                    ?: ArticleViewModel.AnswerTransitionDirection.DEFAULT,
-                            )
+                            when (sharedData?.answerTransitionDirection) {
+                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_NEXT ->
+                                    slideOutVertically(tween(300)) { -it } + fadeOut(tween(300))
+                                ArticleViewModel.AnswerTransitionDirection.VERTICAL_PREVIOUS ->
+                                    slideOutVertically(tween(300)) { it } + fadeOut(tween(300))
+                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_NEXT ->
+                                    slideOutHorizontally(tween(300)) { -it } + fadeOut(tween(300))
+                                ArticleViewModel.AnswerTransitionDirection.HORIZONTAL_PREVIOUS ->
+                                    slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300))
+                                else -> ExitTransition.None
+                            }
                         },
                     ) { navEntry ->
                         val article: Article = navEntry.toRoute()
@@ -666,36 +693,35 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
                             SearchScreen(
-                                innerPadding = innerPadding,
                                 search = search,
                                 selectionState = selectionState,
                             )
                         }
                     }
-                    composable<Collections> { navEntry ->
+                    composable<Collections> {
+                        val data: Collections = it.toRoute()
                         ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, _ ->
-                            val data: Collections = navEntry.toRoute()
                             CollectionScreen(data.userToken)
                         }
                     }
-                    composable<CollectionContent> { navEntry ->
+                    composable<CollectionContent> {
+                        val content: CollectionContent = it.toRoute()
                         ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
-                            val content: CollectionContent = navEntry.toRoute()
                             CollectionContentScreen(
                                 collectionId = content.collectionId,
                                 selectionState = selectionState,
                             )
                         }
                     }
-                    composable<Person> { navEntry ->
+                    composable<Person> {
+                        val person: Person = it.toRoute()
                         ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                         ) { _, selectionState ->
-                            val person: Person = navEntry.toRoute()
                             PeopleScreen(
                                 person = person,
                                 selectionState = selectionState,
@@ -734,9 +760,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     }
                     composable<Account.RecommendSettings> {
                         val args = it.toRoute<Account.RecommendSettings>()
-                        ContentFilterSettingsScreen(
-                            setting = args.setting,
-                        )
+                        ContentFilterSettingsScreen(args.setting)
                     }
                     composable<Account.SystemAndUpdateSettings> {
                         SystemAndUpdateSettingsScreen()
@@ -756,12 +780,59 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
     }
 }
 
-private fun isTopLevelDest(navEntry: NavBackStackEntry?): Boolean = navEntry.hasRoute(Home::class) ||
-    navEntry.hasRoute(Follow::class) ||
-    navEntry.hasRoute(HotList::class) ||
-    navEntry.hasRoute(Daily::class) ||
-    navEntry.hasRoute(OnlineHistory::class) ||
-    navEntry.hasRoute(Account::class)
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MainTabsPager(
+    pagerState: PagerState,
+    pages: List<MainTabPage>,
+    scrollToTopTrigger: Int,
+    innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    onFollowTabSelected: (Int) -> Unit,
+    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+) {
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize(),
+    ) { pageIndex ->
+        val page = pages.getOrNull(pageIndex) ?: return@HorizontalPager
+        when (page) {
+            MainTabPage.HomePage -> HomeScreen(
+                scrollToTopTrigger = scrollToTopTrigger,
+                innerPadding = innerPadding,
+                selectionState = selectionState,
+            )
+            MainTabPage.FollowRecommendPage -> FollowTopLevelPage(
+                selectedTabIndex = 0,
+                onTabSelected = onFollowTabSelected,
+                selectionState = selectionState,
+                scrollToTopTrigger = scrollToTopTrigger,
+                innerPadding = innerPadding,
+                isActive = pagerState.currentPage == pageIndex,
+            )
+            MainTabPage.FollowDynamicPage -> FollowTopLevelPage(
+                selectedTabIndex = 1,
+                onTabSelected = onFollowTabSelected,
+                selectionState = selectionState,
+                scrollToTopTrigger = scrollToTopTrigger,
+                innerPadding = innerPadding,
+                isActive = pagerState.currentPage == pageIndex,
+            )
+            MainTabPage.HotListPage -> HotListScreen(innerPadding, selectionState)
+            MainTabPage.DailyPage -> DailyScreen()
+            MainTabPage.OnlineHistoryPage -> OnlineHistoryScreen()
+            MainTabPage.AccountPage -> AccountSettingScreen(innerPadding)
+        }
+    }
+}
+
+private fun isTopLevelDest(navEntry: NavBackStackEntry?): Boolean = navEntry.hasRoute(MainTabs::class)
+
+private val TopLevelDestination.openFrom: String?
+    get() = when (this) {
+        Home -> ContentOpenFrom.HOME_FEED
+        OnlineHistory -> ContentOpenFrom.HISTORY
+        else -> null
+    }
 
 internal fun NavBackStackEntry?.hasRoute(cls: KClass<out NavDestination>): Boolean {
     val dest = this?.destination ?: return false

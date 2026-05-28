@@ -18,6 +18,7 @@
 package com.github.zly2006.zhihu.ui
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -25,6 +26,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -56,6 +59,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,23 +69,31 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.github.zly2006.zhihu.BuildConfig
 import com.github.zly2006.zhihu.MainActivity
+import com.github.zly2006.zhihu.WebviewActivity
 import com.github.zly2006.zhihu.data.AccountData
 import com.github.zly2006.zhihu.data.DataHolder
+import com.github.zly2006.zhihu.data.OfficialBadge
+import com.github.zly2006.zhihu.data.officialBadge
+import com.github.zly2006.zhihu.data.officialBadgeDetails
 import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
+import com.github.zly2006.zhihu.navigation.CollectionContent
 import com.github.zly2006.zhihu.navigation.LocalNavigator
 import com.github.zly2006.zhihu.navigation.Person
 import com.github.zly2006.zhihu.navigation.Pin
 import com.github.zly2006.zhihu.navigation.Question
+import com.github.zly2006.zhihu.ui.components.AuthorBadge
 import com.github.zly2006.zhihu.ui.components.FeedCard
 import com.github.zly2006.zhihu.ui.components.OpenImageDialog
 import com.github.zly2006.zhihu.ui.components.PaginatedList
 import com.github.zly2006.zhihu.ui.components.ProgressIndicatorFooter
+import com.github.zly2006.zhihu.ui.components.officialBadgeIconModel
 import com.github.zly2006.zhihu.util.signFetchRequest
 import com.github.zly2006.zhihu.viewmodel.PaginationViewModel
 import com.github.zly2006.zhihu.viewmodel.feed.BaseFeedViewModel
@@ -96,6 +108,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
@@ -114,7 +127,7 @@ class PeopleAnswersViewModel(
         get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/answers?sort_by=$sortBy"
 
     override val include: String
-        get() = "data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,collapsed_by,suggest_edit,comment_count,thanks_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,excerpt,paid_info,reaction_instruction,is_labeled,label_info,relationship.is_authorized,voting,is_author,is_thanked,is_nothelp"
+        get() = "data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,collapsed_by,suggest_edit,comment_count,thanks_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,excerpt,paid_info,reaction_instruction,is_labeled,label_info,relationship.is_authorized,voting,is_author,is_thanked,is_nothelp,author.badge_v2"
 
     fun changeSortBy(newSort: String, context: Context) {
         if (sortBy != newSort) {
@@ -136,7 +149,7 @@ class PeopleArticlesViewModel(
         get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/articles?sort_by=$sortBy"
 
     override val include: String
-        get() = "data[*].comment_count,suggest_edit,is_normal,thumbnail_extra_info,thumbnail,can_comment,comment_permission,admin_closed_comment,content,voteup_count,created,updated,upvoted_followees,voting,review_info,reaction_instruction,is_labeled,label_info;data[*].vessay_info;data[*].author.badge[?(type=best_answerer)].topics;"
+        get() = "data[*].comment_count,suggest_edit,is_normal,thumbnail_extra_info,thumbnail,can_comment,comment_permission,admin_closed_comment,content,voteup_count,created,updated,upvoted_followees,voting,review_info,reaction_instruction,is_labeled,label_info,author.badge_v2;data[*].vessay_info;data[*].author.badge[?(type=best_answerer)].topics;"
 
     fun changeSortBy(newSort: String, context: Context) {
         if (sortBy != newSort) {
@@ -165,7 +178,7 @@ class PeopleFollowersViewModel(
         get() = "https://api.zhihu.com/people/${person.id}/followers"
 
     override val include: String
-        get() = "data[*].answer_count,articles_count,gender,follower_count,is_followed,is_following,badge[?(type=best_answerer)].topics"
+        get() = "data[*].answer_count,articles_count,gender,follower_count,is_followed,is_following,badge_v2,badge[?(type=best_answerer)].topics"
 }
 
 class PeopleFollowingViewModel(
@@ -177,7 +190,7 @@ class PeopleFollowingViewModel(
         get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/followees"
 
     override val include: String
-        get() = "data[*].answer_count,articles_count,gender,follower_count,is_followed,is_following,badge[?(type=best_answerer)].topics"
+        get() = "data[*].answer_count,articles_count,gender,follower_count,is_followed,is_following,badge_v2,badge[?(type=best_answerer)].topics"
 }
 
 class PeopleCollectionsViewModel(
@@ -228,12 +241,88 @@ class PeopleColumnContributionsViewModel(
         get() = "data[*].articles_count,followers,author"
 }
 
+@Serializable
+data class FollowedQuestion(
+    val id: String,
+    val type: String = "question",
+    val url: String = "",
+    val title: String = "",
+    val questionType: String = "",
+    val created: Long = 0L,
+    val updatedTime: Long = 0L,
+)
+
+@Serializable
+data class FollowedTopic(
+    val id: String = "",
+    val type: String = "topic",
+    val url: String = "",
+    val name: String = "",
+    val avatarUrl: String? = null,
+    val topicType: String? = null,
+    val topic: DataHolder.Topic? = null,
+) {
+    val displayId: String get() = topic?.id ?: id
+    val displayName: String get() = topic?.name ?: name
+    val displayAvatarUrl: String? get() = topic?.avatarUrl ?: avatarUrl
+}
+
+class PeopleFollowingCollectionsViewModel(
+    val person: Person,
+) : PaginationViewModel<DataHolder.Collection>(
+        typeOf<DataHolder.Collection>(),
+    ) {
+    override val initialUrl: String
+        get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/following-favlists"
+
+    override val include: String
+        get() = "data[*].updated_time,answer_count,follower_count,creator"
+}
+
+class PeopleFollowingQuestionsViewModel(
+    val person: Person,
+) : PaginationViewModel<FollowedQuestion>(
+        typeOf<FollowedQuestion>(),
+    ) {
+    override val initialUrl: String
+        get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/following-questions"
+
+    override val include: String
+        get() = ""
+}
+
+class PeopleFollowingTopicsViewModel(
+    val person: Person,
+) : PaginationViewModel<FollowedTopic>(
+        typeOf<FollowedTopic>(),
+    ) {
+    override val initialUrl: String
+        get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/following-topic-contributions"
+
+    override val include: String
+        get() = ""
+}
+
+class PeopleFollowingColumnsViewModel(
+    val person: Person,
+) : PaginationViewModel<DataHolder.Column>(
+        typeOf<DataHolder.Column>(),
+    ) {
+    override val initialUrl: String
+        get() = "https://www.zhihu.com/api/v4/members/${person.userTokenOrId}/following-columns"
+
+    override val include: String
+        get() = "data[*].articles_count,followers,author"
+}
+
 class PersonViewModel(
     val person: Person,
 ) : ViewModel() {
     var avatar by mutableStateOf("")
     var name by mutableStateOf(person.name)
     var headline by mutableStateOf("")
+    var officialBadge by mutableStateOf<OfficialBadge?>(null)
+    var officialBadgeDetails by mutableStateOf<List<OfficialBadge>>(emptyList())
     var followerCount by mutableIntStateOf(0)
     var followingCount by mutableIntStateOf(0)
     var answerCount by mutableIntStateOf(0)
@@ -252,6 +341,10 @@ class PersonViewModel(
     val columnsFeedModel = PeopleColumnContributionsViewModel(person)
     val followersFeedModel = PeopleFollowersViewModel(person)
     val followingFeedModel = PeopleFollowingViewModel(person)
+    val followingCollectionsFeedModel = PeopleFollowingCollectionsViewModel(person)
+    val followingQuestionsFeedModel = PeopleFollowingQuestionsViewModel(person)
+    val followingTopicsFeedModel = PeopleFollowingTopicsViewModel(person)
+    val followingColumnsFeedModel = PeopleFollowingColumnsViewModel(person)
     val subFeedModels = arrayOf(
         answersFeedModel,
         articlesFeedModel,
@@ -328,10 +421,10 @@ class PersonViewModel(
 
     suspend fun load(context: Context) {
         context as MainActivity
-        val jojo = AccountData.fetchGet(context, "https://www.zhihu.com/api/v4/members/${person.id}") {
+        val jojo = AccountData.fetchGet(context, peopleProfileUrl(person)) {
             url {
                 // todo question_count pins_count
-                parameters["include"] = "allow_message,is_followed,is_following,is_org,is_blocking,answer_count,follower_count,following_count,articles_count,question_count,pins_count"
+                parameters["include"] = "allow_message,is_followed,is_following,is_org,is_blocking,badge_v2,answer_count,follower_count,following_count,articles_count,question_count,pins_count"
             }
             signFetchRequest()
         }!!
@@ -339,6 +432,8 @@ class PersonViewModel(
         this.avatar = person.avatarUrl
         this.name = person.name
         this.headline = person.headline
+        this.officialBadge = person.badgeV2.officialBadge()
+        this.officialBadgeDetails = person.badgeV2.officialBadgeDetails()
         this.followerCount = person.followerCount
         this.followingCount = person.followingCount
         this.answerCount = person.answerCount
@@ -414,6 +509,14 @@ private val PEOPLE_SCREEN_TITLES = listOf(
     "专栏",
     "粉丝",
     "关注",
+    "关注订阅",
+)
+
+private val PEOPLE_SCREEN_SUBSCRIPTION_TITLES = listOf(
+    "我订阅的专栏",
+    "关注的话题",
+    "关注的问题",
+    "关注的收藏夹",
 )
 
 const val PEOPLE_SCREEN_ROOT_TAG = "people_screen_root"
@@ -430,6 +533,8 @@ const val PEOPLE_SCREEN_PINS_LIST_TAG = "people_screen_pins_list"
 const val PEOPLE_SCREEN_COLUMNS_LIST_TAG = "people_screen_columns_list"
 const val PEOPLE_SCREEN_FOLLOWERS_LIST_TAG = "people_screen_followers_list"
 const val PEOPLE_SCREEN_FOLLOWING_LIST_TAG = "people_screen_following_list"
+const val PEOPLE_SCREEN_SUBSCRIPTION_TABS_TAG = "people_screen_subscription_tabs"
+const val PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG = "people_screen_subscriptions_list"
 const val PEOPLE_SCREEN_ANSWER_COUNT_TAG = "people_screen_stat_answers"
 const val PEOPLE_SCREEN_ARTICLE_COUNT_TAG = "people_screen_stat_articles"
 const val PEOPLE_SCREEN_FOLLOWER_COUNT_TAG = "people_screen_stat_followers"
@@ -441,6 +546,7 @@ const val PEOPLE_SCREEN_ANSWER_SORT_HOT_TAG = "people_screen_answer_sort_voteups
 const val PEOPLE_SCREEN_ANSWER_SORT_TIME_TAG = "people_screen_answer_sort_created"
 const val PEOPLE_SCREEN_ARTICLE_SORT_HOT_TAG = "people_screen_article_sort_voteups"
 const val PEOPLE_SCREEN_ARTICLE_SORT_TIME_TAG = "people_screen_article_sort_created"
+const val PEOPLE_SCREEN_OFFICIAL_BADGE_TAG = "people_screen_official_badge"
 
 fun peopleScreenTabTag(index: Int): String = "people_screen_tab_$index"
 
@@ -466,15 +572,28 @@ fun peopleScreenFollowingItemTag(id: String): String = "people_screen_following_
 
 fun peopleScreenFollowingActionTag(id: String): String = "people_screen_following_action_$id"
 
+fun peopleScreenSubscriptionTabTag(index: Int): String = "people_screen_subscription_tab_$index"
+
+fun peopleScreenFollowedQuestionItemTag(id: String): String = "people_screen_followed_question_item_$id"
+
+fun peopleScreenFollowedTopicItemTag(id: String): String = "people_screen_followed_topic_item_$id"
+
 private fun peopleScreenInitialPage(person: Person): Int {
     val jumpToIndex = PEOPLE_SCREEN_TITLES.indexOf(person.jumpTo)
     return if (jumpToIndex >= 0) jumpToIndex else 0
+}
+
+internal fun peopleProfileUrl(person: Person): String {
+    val identifier = person.urlToken.takeIf { it.isNotBlank() } ?: person.id
+    return "https://api.zhihu.com/people/$identifier"
 }
 
 data class PeopleProfileUiState(
     val avatar: String = "",
     val name: String = "",
     val headline: String = "",
+    val officialBadge: OfficialBadge? = null,
+    val officialBadgeDetails: List<OfficialBadge> = emptyList(),
     val followerCount: Int = 0,
     val followingCount: Int = 0,
     val answerCount: Int = 0,
@@ -506,6 +625,10 @@ data class PeopleScreenUiState(
     val columns: PeopleListUiState<DataHolder.Column> = PeopleListUiState(),
     val followers: PeopleListUiState<DataHolder.People> = PeopleListUiState(),
     val following: PeopleListUiState<DataHolder.People> = PeopleListUiState(),
+    val followingColumns: PeopleListUiState<DataHolder.Column> = PeopleListUiState(),
+    val followingTopics: PeopleListUiState<FollowedTopic> = PeopleListUiState(),
+    val followingQuestions: PeopleListUiState<FollowedQuestion> = PeopleListUiState(),
+    val followingCollections: PeopleListUiState<DataHolder.Collection> = PeopleListUiState(),
 )
 
 /**
@@ -529,6 +652,10 @@ data class PeopleScreenTestOverrides(
     val onColumnsLoadMore: (() -> Unit)? = null,
     val onFollowersLoadMore: (() -> Unit)? = null,
     val onFollowingLoadMore: (() -> Unit)? = null,
+    val onFollowingColumnsLoadMore: (() -> Unit)? = null,
+    val onFollowingTopicsLoadMore: (() -> Unit)? = null,
+    val onFollowingQuestionsLoadMore: (() -> Unit)? = null,
+    val onFollowingCollectionsLoadMore: (() -> Unit)? = null,
 )
 
 private fun PersonViewModel.toUiState(): PeopleScreenUiState = PeopleScreenUiState(
@@ -536,6 +663,8 @@ private fun PersonViewModel.toUiState(): PeopleScreenUiState = PeopleScreenUiSta
         avatar = avatar,
         name = name,
         headline = headline,
+        officialBadge = officialBadge,
+        officialBadgeDetails = officialBadgeDetails,
         followerCount = followerCount,
         followingCount = followingCount,
         answerCount = answerCount,
@@ -581,6 +710,22 @@ private fun PersonViewModel.toUiState(): PeopleScreenUiState = PeopleScreenUiSta
     following = PeopleListUiState(
         items = followingFeedModel.allData,
         isEnd = followingFeedModel.isEnd,
+    ),
+    followingColumns = PeopleListUiState(
+        items = followingColumnsFeedModel.allData,
+        isEnd = followingColumnsFeedModel.isEnd,
+    ),
+    followingTopics = PeopleListUiState(
+        items = followingTopicsFeedModel.allData,
+        isEnd = followingTopicsFeedModel.isEnd,
+    ),
+    followingQuestions = PeopleListUiState(
+        items = followingQuestionsFeedModel.allData,
+        isEnd = followingQuestionsFeedModel.isEnd,
+    ),
+    followingCollections = PeopleListUiState(
+        items = followingCollectionsFeedModel.allData,
+        isEnd = followingCollectionsFeedModel.isEnd,
     ),
 )
 
@@ -1077,7 +1222,136 @@ fun PeopleScreen(
                             )
                         }
                     }
+
+                    9 -> {
+                        FollowingSubscriptionsPage(
+                            uiState = uiState,
+                            onLoadMore = { subscriptionPage ->
+                                if (testOverrides != null) {
+                                    when (subscriptionPage) {
+                                        0 -> testOverrides.onFollowingColumnsLoadMore?.invoke()
+                                        1 -> testOverrides.onFollowingTopicsLoadMore?.invoke()
+                                        2 -> testOverrides.onFollowingQuestionsLoadMore?.invoke()
+                                        3 -> testOverrides.onFollowingCollectionsLoadMore?.invoke()
+                                    }
+                                } else {
+                                    when (subscriptionPage) {
+                                        0 -> viewModel.followingColumnsFeedModel.loadMore(context)
+                                        1 -> viewModel.followingTopicsFeedModel.loadMore(context)
+                                        2 -> viewModel.followingQuestionsFeedModel.loadMore(context)
+                                        3 -> viewModel.followingCollectionsFeedModel.loadMore(context)
+                                    }
+                                }
+                            },
+                            modifier = Modifier.testTag(peopleScreenPageTag(page)),
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FollowingSubscriptionsPage(
+    uiState: PeopleScreenUiState,
+    onLoadMore: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var selectedPage by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(selectedPage) {
+        onLoadMore(selectedPage)
+    }
+
+    Column(
+        modifier = modifier.fillMaxSize(),
+    ) {
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(PEOPLE_SCREEN_SUBSCRIPTION_TABS_TAG)
+                .padding(vertical = 8.dp, horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            PEOPLE_SCREEN_SUBSCRIPTION_TITLES.forEachIndexed { index, title ->
+                OutlinedButton(
+                    onClick = { selectedPage = index },
+                    modifier = Modifier.testTag(peopleScreenSubscriptionTabTag(index)),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = if (selectedPage == index) {
+                        ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    },
+                ) {
+                    Text(title)
+                }
+            }
+        }
+
+        when (selectedPage) {
+            0 -> PaginatedList(
+                items = uiState.followingColumns.items,
+                onLoadMore = { onLoadMore(0) },
+                isEnd = { uiState.followingColumns.isEnd },
+                footer = ProgressIndicatorFooter,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG),
+                key = { it.id },
+            ) { column ->
+                ColumnListItem(
+                    column = column,
+                    itemTag = peopleScreenColumnItemTag(column.id),
+                )
+            }
+
+            1 -> PaginatedList(
+                items = uiState.followingTopics.items,
+                onLoadMore = { onLoadMore(1) },
+                isEnd = { uiState.followingTopics.isEnd },
+                footer = ProgressIndicatorFooter,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG),
+                key = { it.displayId },
+            ) { topic ->
+                FollowedTopicListItem(topic)
+            }
+
+            2 -> PaginatedList(
+                items = uiState.followingQuestions.items,
+                onLoadMore = { onLoadMore(2) },
+                isEnd = { uiState.followingQuestions.isEnd },
+                footer = ProgressIndicatorFooter,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG),
+                key = { it.id },
+            ) { question ->
+                FollowedQuestionListItem(question)
+            }
+
+            3 -> PaginatedList(
+                items = uiState.followingCollections.items,
+                onLoadMore = { onLoadMore(3) },
+                isEnd = { uiState.followingCollections.isEnd },
+                footer = ProgressIndicatorFooter,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG),
+                key = { it.id },
+            ) { collection ->
+                CollectionListItem(
+                    collection = collection,
+                    itemTag = peopleScreenCollectionItemTag(collection.id),
+                )
             }
         }
     }
@@ -1088,19 +1362,13 @@ private fun CollectionListItem(
     collection: DataHolder.Collection,
     itemTag: String? = null,
 ) {
-    val context = LocalContext.current
+    val navigator = LocalNavigator.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (itemTag != null) Modifier.testTag(itemTag) else Modifier)
             .clickable {
-                // TODO: Navigate to collection detail
-                Toast
-                    .makeText(
-                        context,
-                        "收藏夹详情功能开发中",
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                navigator.onNavigate(CollectionContent(collection.id))
             }.padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Text(
@@ -1127,13 +1395,7 @@ private fun ColumnListItem(
             .fillMaxWidth()
             .then(if (itemTag != null) Modifier.testTag(itemTag) else Modifier)
             .clickable {
-                // TODO: Navigate to column detail
-                Toast
-                    .makeText(
-                        context,
-                        "专栏详情功能开发中",
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                openInWebview(context, column.webUrl())
             }.padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1153,13 +1415,77 @@ private fun ColumnListItem(
                 )
             }
             Text(
-                text = "${column.articlesCount} 文章 · ${column.followerCount} 关注",
+                text = "${column.articlesCount} 文章 · ${column.followerCount.coerceAtLeast(column.followers)} 关注",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
     }
+}
+
+@Composable
+private fun FollowedQuestionListItem(question: FollowedQuestion) {
+    val navigator = LocalNavigator.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(peopleScreenFollowedQuestionItemTag(question.id))
+            .clickable {
+                question.id.toLongOrNull()?.let {
+                    navigator.onNavigate(Question(it, question.title))
+                }
+            }.padding(vertical = 8.dp, horizontal = 4.dp),
+    ) {
+        Text(
+            text = question.title,
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+}
+
+@Composable
+private fun FollowedTopicListItem(topic: FollowedTopic) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(peopleScreenFollowedTopicItemTag(topic.displayId))
+            .clickable {
+                openInWebview(context, "https://www.zhihu.com/topic/${topic.displayId}")
+            }.padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AsyncImage(
+            model = topic.displayAvatarUrl,
+            contentDescription = "话题头像",
+            modifier = Modifier
+                .padding(end = 12.dp)
+                .size(40.dp)
+                .clip(CircleShape),
+        )
+        Text(
+            text = topic.displayName,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+private fun DataHolder.Column.webUrl(): String = when {
+    url.contains("/api/v4/columns/") ->
+        url
+            .replace("http://", "https://")
+            .replace("/api/v4/columns/", "/column/")
+
+    url.startsWith("http") && !url.contains("/api/") -> url.replace("http://", "https://")
+    else -> "https://www.zhihu.com/column/$id"
+}
+
+private fun openInWebview(context: Context, url: String) {
+    context.startActivity(
+        Intent(Intent.ACTION_VIEW, url.toUri(), context, WebviewActivity::class.java),
+    )
 }
 
 @Composable
@@ -1185,10 +1511,23 @@ private fun PeopleListItem(
                 .clip(CircleShape),
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = people.name,
-                style = MaterialTheme.typography.titleMedium,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = people.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                val officialBadge = people.badgeV2.officialBadge()
+                if (officialBadge?.isUsefulInList == true) {
+                    AuthorBadge(
+                        badge = officialBadge,
+                        compact = true,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            }
             if (people.headline.isNotEmpty()) {
                 Text(
                     text = people.headline,
@@ -1250,6 +1589,45 @@ private fun StatItem(label: String, value: Int, onClick: () -> Unit = {}, tag: S
         Text(text = label, style = MaterialTheme.typography.labelMedium)
     }
 }
+
+@Composable
+private fun OfficialBadgeDetails(
+    badges: List<OfficialBadge>,
+    modifier: Modifier = Modifier,
+) {
+    if (badges.isEmpty()) return
+    Column(modifier = modifier) {
+        badges.forEach { badge ->
+            Row(
+                modifier = Modifier.padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (badge.iconUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = officialBadgeIconModel(badge.iconUrl),
+                        contentDescription = badge.description,
+                        modifier = Modifier
+                            .padding(end = 6.dp)
+                            .size(18.dp),
+                    )
+                }
+                Text(
+                    text = "${badge.peopleDetailTitle}: ${badge.description}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+private val OfficialBadge.peopleDetailTitle: String
+    get() = when {
+        title == "认证" || title == "已认证的个人" -> "认证信息"
+        else -> title
+    }
 
 @Composable
 private fun SortBar(
@@ -1338,12 +1716,32 @@ private fun UserInfoHeader(
                     },
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text(profile.name, style = MaterialTheme.typography.titleLarge)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        profile.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (profile.officialBadge != null) {
+                        AuthorBadge(
+                            badge = profile.officialBadge,
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .testTag(PEOPLE_SCREEN_OFFICIAL_BADGE_TAG),
+                        )
+                    }
+                }
                 Text(
                     profile.headline,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
+                )
+                OfficialBadgeDetails(
+                    badges = profile.officialBadgeDetails,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }

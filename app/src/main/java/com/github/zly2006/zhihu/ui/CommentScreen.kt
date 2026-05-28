@@ -119,6 +119,7 @@ import com.github.zly2006.zhihu.navigation.NavDestination
 import com.github.zly2006.zhihu.navigation.Person
 import com.github.zly2006.zhihu.navigation.Pin
 import com.github.zly2006.zhihu.navigation.Question
+import com.github.zly2006.zhihu.navigation.SegmentCommentHolder
 import com.github.zly2006.zhihu.ui.components.OpenImageDialog
 import com.github.zly2006.zhihu.util.createEmojiInlineContent
 import com.github.zly2006.zhihu.util.dfsSimple
@@ -436,16 +437,16 @@ fun CommentScreen(
     var isSending by remember { mutableStateOf(false) }
     var replyToComment by remember { mutableStateOf<CommentModel?>(null) }
     val resolvedContent = content()
-    val commentViewModelKey = remember(resolvedContent) { resolvedContent.commentViewModelKey() }
+    val viewModelKey = commentViewModelKey(resolvedContent)
 
     // 根据内容类型选择合适的ViewModel
     val viewModel: BaseCommentViewModel = testOverrides?.viewModel ?: when (resolvedContent) {
-        is CommentHolder -> remember {
+        is CommentHolder -> remember(viewModelKey) {
             // 子评论不进行状态保存
             ChildCommentViewModel(resolvedContent)
         }
 
-        else -> viewModel(key = commentViewModelKey) {
+        else -> viewModel(key = viewModelKey) {
             RootCommentViewModel(resolvedContent)
         }
     }
@@ -939,12 +940,13 @@ fun CommentScreen(
     }
 }
 
-private fun NavDestination.commentViewModelKey(): String = when (this) {
-    is Article -> "article:$type:$id"
-    is Question -> "question:$questionId"
-    is Pin -> "pin:$id"
-    is CommentHolder -> "comment:$commentId:${article.commentViewModelKey()}"
-    else -> "${this::class.qualifiedName}:${hashCode()}"
+private fun commentViewModelKey(content: NavDestination): String = when (content) {
+    is Article -> "article:${content.type}:${content.id}"
+    is Pin -> "pin:${content.id}"
+    is Question -> "question:${content.questionId}"
+    is SegmentCommentHolder -> "segment:${content.contentType}:${content.contentId}:${content.segmentId}"
+    is CommentHolder -> "comment:${content.commentId}:${commentViewModelKey(content.article)}"
+    else -> "comment:${content::class.qualifiedName}:${content.hashCode()}"
 }
 
 @OptIn(ExperimentalFoundationApi::class)

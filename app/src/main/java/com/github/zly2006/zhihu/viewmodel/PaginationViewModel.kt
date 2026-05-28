@@ -81,7 +81,7 @@ abstract class PaginationViewModel<T : Any>(
      * Generally used fields to include in the API request.
      * This can be overridden in subclasses to include more specific fields.
      */
-    open val include = "data[*].content,excerpt,headline"
+    open val include = "data[*].content,excerpt,headline,target.author.badge_v2"
 
     @Serializable
     data class Paging(
@@ -126,7 +126,7 @@ abstract class PaginationViewModel<T : Any>(
         return AccountData.httpClient(context)
     }
 
-    protected open fun processResponse(context: Context, data: List<T>, rawData: JsonArray) {
+    protected open suspend fun processResponse(context: Context, data: List<T>, rawData: JsonArray) {
         debugData.addAll(rawData) // 保存原始JSON
         allData.addAll(data) // 保存未flatten的数据
     }
@@ -138,7 +138,9 @@ abstract class PaginationViewModel<T : Any>(
             @Suppress("HttpUrlsUsage")
             val json = AccountData.fetchGet(context, url.replace("http://", "https://")) {
                 url {
-                    parameters["include"] = include
+                    if (include.isNotEmpty()) {
+                        parameters["include"] = include
+                    }
                 }
                 signFetchRequest()
             }!!

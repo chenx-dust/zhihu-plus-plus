@@ -117,11 +117,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -148,6 +150,7 @@ import com.github.zly2006.zhihu.navigation.Question
 import com.github.zly2006.zhihu.theme.ThemeManager
 import com.github.zly2006.zhihu.ui.components.AnswerHorizontalOverscroll
 import com.github.zly2006.zhihu.ui.components.AnswerVerticalOverscroll
+import com.github.zly2006.zhihu.ui.components.AuthorBadge
 import com.github.zly2006.zhihu.ui.components.CollectionDialogComponent
 import com.github.zly2006.zhihu.ui.components.CommentScreenComponent
 import com.github.zly2006.zhihu.ui.components.DraggableRefreshButton
@@ -659,6 +662,7 @@ fun ArticleScreen(
     var showExportDialog by remember { mutableStateOf(false) }
     var showDoubleTapActionDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val hapticFeedback = LocalHapticFeedback.current
 
     val useDuo3ArticleActions = remember { preferences.getBoolean("duo3_article_actions", false) }
     var buttonSkipAnswer by remember { mutableStateOf(preferences.getBoolean("buttonSkipAnswer", true)) }
@@ -691,6 +695,7 @@ fun ArticleScreen(
     }
 
     fun upVoteFromDoubleTap() {
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
         if (viewModel.voteUpState != VoteUpState.Up) {
             viewModel.toggleVoteUp(context, VoteUpState.Up)
         }
@@ -701,7 +706,10 @@ fun ArticleScreen(
             AnswerDoubleTapAction.None -> Unit
             AnswerDoubleTapAction.Ask -> showDoubleTapActionDialog = true
             AnswerDoubleTapAction.VoteUp -> upVoteFromDoubleTap()
-            AnswerDoubleTapAction.OpenComments -> showComments = true
+            AnswerDoubleTapAction.OpenComments -> {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                showComments = true
+            }
         }
     }
 
@@ -1146,11 +1154,23 @@ fun ArticleScreen(
                                 Column(
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Text(
-                                        text = viewModel.authorName,
-                                        style = if (expanded) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelMedium,
-                                        color = if (expanded) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = viewModel.authorName,
+                                            style = if (expanded) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelMedium,
+                                            color = if (expanded) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false),
+                                        )
+                                        if (viewModel.authorBadge != null) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            AuthorBadge(
+                                                badge = viewModel.authorBadge,
+                                                compact = !expanded,
+                                            )
+                                        }
+                                    }
                                     if (viewModel.authorBio.isNotEmpty() && expanded) {
                                         Text(
                                             text = viewModel.authorBio,
@@ -1957,12 +1977,23 @@ private fun CachedAnswerPreview(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = cached.authorName,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                    )
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = cached.authorName,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        if (cached.authorBadge != null) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            AuthorBadge(
+                                badge = cached.authorBadge,
+                            )
+                        }
+                    }
                     if (cached.authorBio.isNotEmpty()) {
                         Text(
                             text = cached.authorBio,

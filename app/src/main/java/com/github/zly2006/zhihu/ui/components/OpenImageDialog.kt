@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,8 +21,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
@@ -53,16 +57,19 @@ class OpenImageDialog(
                             .fillMaxSize()
                             .background(Color.Black),
                     ) {
-                        ZoomableAsyncImage(
-                            model = url,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            onClick = { dismiss() },
-                            onLongClick = { offset ->
-                                menuOffset = offset
-                                showMenu = true
-                            },
-                        )
+                        // 禁用telephoto自带的震动反馈
+                        CompositionLocalProvider(LocalHapticFeedback provides NoopHapticFeedback) {
+                            ZoomableAsyncImage(
+                                model = url,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                onClick = { dismiss() },
+                                onLongClick = { offset ->
+                                    menuOffset = offset
+                                    showMenu = true
+                                },
+                            )
+                        }
 
                         DropdownMenu(
                             expanded = showMenu,
@@ -113,5 +120,11 @@ class OpenImageDialog(
             ViewGroup.LayoutParams.MATCH_PARENT,
         )
         window?.setBackgroundDrawable(BLACK.toDrawable())
+    }
+}
+
+private object NoopHapticFeedback : HapticFeedback {
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+        // noop
     }
 }

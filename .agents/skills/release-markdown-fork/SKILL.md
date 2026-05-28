@@ -15,6 +15,17 @@ Required:
 - Fork checkout: `/Users/zhaoliyan/IdeaProjects/Zhihu/.tmp/Markdown-zly2006`
 - Main project checkout: `/Users/zhaoliyan/IdeaProjects/Zhihu`
 
+Version rule:
+
+- The zly fork has its own `0.0.1-alpha.N` release line. When upstream moves to
+  `1.x`, do **not** change the fork's base version to match upstream. Always
+  keep `0.0.1` and only increment the `alpha.N` suffix.
+- A diff against upstream may show `VERSION=1.x` → `VERSION=0.0.1-alpha.N`;
+  that is expected for the fork release. Do not "normalize" it back to upstream.
+- In `gradle.properties`, keep a comment immediately above `VERSION` recording
+  the upstream source version, for example:
+  `# Upstream huarangmeng/Markdown version: 1.2.9`.
+
 Optional:
 
 - Proxy for Sonatype and repo1 access:
@@ -25,11 +36,28 @@ Optional:
 ## Guardrails
 
 - Prefer preserving existing published coordinates. Do not switch the app to Android-only coordinates unless publishing KMP root coordinates is impossible.
-- Fork-specific behavior should be reduced to the minimum approved delta. Current approved delta: `NativeBlock` support.
+- Fork-specific behavior should be reduced to the minimum approved delta. Current approved deltas:
+  - `NativeBlock` support
+  - `mathFont: MathFont` field in `MarkdownTheme` (font CDN support)
+  - Switched latex dependency from `io.github.huarangmeng` to `io.github.zly2006`
 - Never use destructive git commands on a dirty tree.
 - For Zhihu after dependency changes, run:
   1. `./gradlew assembleLiteDebug`
   2. `./gradlew ktlintFormat`
+
+## Dependency order (CRITICAL)
+
+The Markdown fork depends on `io.github.zly2006:latex-*`. **Before publishing Markdown, always verify the latex version it depends on is already published to Maven Central:**
+
+```bash
+# Check what latex version Markdown expects
+grep 'latex =' gradle/libs.versions.toml
+
+# Check if that version is on Maven Central
+curl -s https://repo1.maven.org/maven2/io/github/zly2006/latex-renderer/maven-metadata.xml | grep '<release>'
+```
+
+If the expected version is NOT on Maven Central, run the `release-latex-fork` skill first.
 
 ## Workflow
 
@@ -65,6 +93,8 @@ The intended final diff should be limited to:
 
 - Publishing metadata changes for `io.github.zly2006`
 - Version bump
+- A `gradle.properties` comment recording the upstream `huarangmeng/Markdown`
+  version the fork release is based on
 - `NativeBlock` parser/renderer support and its tests
 
 ### 3. Publish to Maven Central
@@ -161,6 +191,12 @@ DO NOT PUSH!
 - Keep coordinates unchanged.
 - Poll deployment status until `PUBLISHED`.
 - Only update Zhihu after the renderer root artifact or Android artifact is publicly reachable.
+
+### Version line accidentally follows upstream
+
+- Symptom: after rebasing/branching from the latest upstream tag, the release version is treated as if it should follow upstream's `1.x` line.
+- Cause: confusing "merge latest upstream" with "adopt upstream's published version family".
+- Fix: keep the fork identity stable. For this fork, the public version line remains `0.0.1-alpha.N`; the release task is to advance `N`, not to rename the series.
 
 ## Final report checklist
 

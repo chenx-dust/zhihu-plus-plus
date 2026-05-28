@@ -9,5 +9,8 @@
       "WebFetch",
       "Read(/tmp*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "chrome-devtools"
+  ]
 }

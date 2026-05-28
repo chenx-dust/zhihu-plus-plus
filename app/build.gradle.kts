@@ -188,14 +188,16 @@ tasks.withType<Test>().configureEach {
     )
 }
 
-val ktor = "3.4.1"
+val ktor = "3.5.0"
 val coil = "3.4.0"
+val aboutLibraries = "14.0.1"
+val composeVersion = "1.11.0"
 val composeAdaptive = "1.3.0-alpha09"
 val composeNavigationSuite = "1.4.0"
-val aboutLibraries = "14.0.1"
+val lifecycleVersion = "2.10.0"
 dependencies {
     implementation("androidx.preference:preference:1.2.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     implementation("io.ktor:ktor-client-core-jvm:$ktor")
     implementation("io.ktor:ktor-client-android:$ktor")
     implementation("io.ktor:ktor-client-content-negotiation-jvm:$ktor")
@@ -204,66 +206,63 @@ dependencies {
     //noinspection GradleDependency
     implementation("androidx.browser:browser:1.8.0")
 
-    implementation("io.github.zly2006:markdown-parser-android:0.0.1-alpha.7")
-    implementation("io.github.zly2006:markdown-renderer-android:0.0.1-alpha.7")
+    implementation("io.github.zly2006:markdown-parser-android:0.0.1-alpha.10")
+    implementation("io.github.zly2006:markdown-renderer-android:0.0.1-alpha.10")
+    implementation("io.github.zly2006:latex-renderer-android:1.4.4-zly")
 
     implementation("io.coil-kt.coil3:coil-compose:$coil")
     implementation("io.coil-kt.coil3:coil-network-ktor3-android:$coil")
     implementation("io.coil-kt.coil3:coil-gif:$coil")
-    implementation("io.coil-kt.coil3:coil-svg:$coil")
+    // implementation("io.coil-kt.coil3:coil-svg:$coil")
     implementation("me.saket.telephoto:zoomable-image-coil3:0.19.0")
 
-    implementation("com.google.android.material:material:1.13.0")
     implementation("com.materialkolor:material-kolor:4.1.1")
 
     implementation("org.jsoup:jsoup:1.22.1")
-    implementation("androidx.legacy:legacy-support-v4:1.0.0")
 
     // ZXing for QR code scanning
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
+    implementation("androidx.core:core-ktx:1.18.0")
+    // Lifecycle (JetBrains KMP versions)
+    implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion")
+    implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
+    // LiveData is Android-specific, keep androidx
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion")
+    // Navigation (JetBrains KMP version)
     //noinspection GradleDependency
-    implementation("androidx.navigation:navigation-ui-ktx:2.9.2")
-    implementation("androidx.webkit:webkit:1.14.0")
+    implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.2")
+    implementation("androidx.webkit:webkit:1.16.0")
     implementation("androidx.activity:activity-compose:1.13.0")
-    implementation(platform("androidx.compose:compose-bom:2025.12.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
+    // Compose (core from JetBrains KMP)
+    implementation("org.jetbrains.compose.runtime:runtime:$composeVersion")
+    implementation("org.jetbrains.compose.foundation:foundation:$composeVersion")
+    implementation("org.jetbrains.compose.material3:material3:1.11.0-alpha07")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:${composeNavigationSuite}")
+    implementation("androidx.compose.material3.adaptive:adaptive:${composeAdaptive}")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:${composeAdaptive}")
+    implementation("androidx.compose.material3.adaptive:adaptive-navigation:${composeAdaptive}")
+    implementation("org.jetbrains.compose.ui:ui:$composeVersion")
+    implementation("org.jetbrains.compose.ui:ui-graphics:$composeVersion")
+    implementation("org.jetbrains.compose.animation:animation:$composeVersion")
+    implementation("org.jetbrains.compose.animation:animation-core:$composeVersion")
+    // Compose (AndroidX — icons, tooling, test not available from JetBrains yet)
+    implementation(platform("androidx.compose:compose-bom:2026.05.00"))
     implementation("androidx.compose.material:material-icons-extended")
-    //noinspection GradleDependency
-    implementation("androidx.navigation:navigation-compose:2.9.2")
-    //noinspection GradleDependency
-    implementation("androidx.compose.animation:animation:1.8.2")
-    //noinspection GradleDependency
-    implementation("androidx.compose.animation:animation-core:1.8.2")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:$composeNavigationSuite")
-    implementation("androidx.compose.material3.adaptive:adaptive:$composeAdaptive")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:$composeAdaptive")
-    implementation("androidx.compose.material3.adaptive:adaptive-navigation:$composeAdaptive")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("com.mikepenz:aboutlibraries-compose-m3:$aboutLibraries")
     implementation("androidx.room:room-common-jvm:2.8.4")
     implementation("androidx.room:room-runtime-android:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
-    implementation("androidx.compose.ui:ui-graphics:1.10.6")
     annotationProcessor("androidx.room:room-compiler:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")
     "fullImplementation"(project(":sentence_embeddings"))
     debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-tooling-preview")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.12.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.05.00"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // HanLP for Chinese NLP
     "fullImplementation"("com.hankcs:hanlp:portable-1.8.4")
-//    implementation("com.halilibo.compose-richtext:richtext-ui-material3-android:1.0.0-alpha03")
-//    implementation("com.halilibo.compose-richtext:richtext-markdown-android:1.0.0-alpha03")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.ktor:ktor-client-cio:$ktor")

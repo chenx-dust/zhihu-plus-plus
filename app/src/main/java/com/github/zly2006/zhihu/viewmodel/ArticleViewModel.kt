@@ -52,6 +52,8 @@ import androidx.navigation.NavBackStackEntry
 import com.github.zly2006.zhihu.MainActivity
 import com.github.zly2006.zhihu.data.AccountData
 import com.github.zly2006.zhihu.data.DataHolder
+import com.github.zly2006.zhihu.data.OfficialBadge
+import com.github.zly2006.zhihu.data.officialBadge
 import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
 import com.github.zly2006.zhihu.navigation.CollectionAnswerNavigator
@@ -65,6 +67,7 @@ import com.github.zly2006.zhihu.ui.components.CustomWebView
 import com.github.zly2006.zhihu.ui.components.setupUpWebviewClient
 import com.github.zly2006.zhihu.util.ArticleExportComment
 import com.github.zly2006.zhihu.util.ZhidaSummarySsePayload
+import com.github.zly2006.zhihu.util.applySegmentInfosToHtml
 import com.github.zly2006.zhihu.util.buildArticleExportCommentsHtml
 import com.github.zly2006.zhihu.util.buildArticleExportData
 import com.github.zly2006.zhihu.util.buildArticleExportFileName
@@ -129,6 +132,7 @@ class ArticleViewModel(
     var authorName by mutableStateOf("")
     var authorBio by mutableStateOf("")
     var authorAvatarSrc by mutableStateOf("")
+    var authorBadge by mutableStateOf<OfficialBadge?>(null)
     var content by mutableStateOf("")
     var attachment by mutableStateOf<JsonElement?>(null)
     var voteUpCount by mutableIntStateOf(0)
@@ -158,6 +162,7 @@ class ArticleViewModel(
         authorName = authorName,
         authorBio = authorBio,
         authorAvatarUrl = authorAvatarSrc,
+        authorBadge = authorBadge,
         content = content,
         voteUpCount = voteUpCount,
         commentCount = commentCount,
@@ -219,6 +224,7 @@ class ArticleViewModel(
         val authorName: String,
         val authorBio: String,
         val authorAvatarUrl: String,
+        val authorBadge: OfficialBadge? = null,
         val content: String,
         val voteUpCount: Int,
         val commentCount: Int,
@@ -380,10 +386,17 @@ class ArticleViewModel(
                             authorName = answer.author.name
                             authorId = answer.author.id
                             authorUrlToken = answer.author.urlToken
-                            content = answer.content
+                            content = applySegmentInfosToHtml(
+                                content = answer.content,
+                                segmentInfos = answer.segmentInfos,
+                                sourceUrl = "https://www.zhihu.com/question/${answer.question.id}/answer/${answer.id}",
+                                contentId = answer.id.toString(),
+                                contentType = "answer",
+                            )
                             attachment = answer.attachment
                             authorBio = answer.author.headline
                             authorAvatarSrc = answer.author.avatarUrl
+                            authorBadge = answer.author.badgeV2.officialBadge()
                             voteUpCount = answer.voteupCount
                             commentCount = answer.commentCount
                             questionId = answer.question.id
@@ -412,8 +425,7 @@ class ArticleViewModel(
                                 context = context,
                                 destination = article,
                                 questionId = answer.question.id,
-                                openFrom = (context as? MainActivity)?.consumePendingContentOpenFrom(article)
-                                    ?: ContentOpenFrom.UNKNOWN,
+                                openFrom = context.consumePendingContentOpenFrom(article),
                             )
                             // 设置问题回答导航器（如果当前不是收藏夹导航器）
                             if (sharedData.navigator !is CollectionAnswerNavigator) {
@@ -437,7 +449,7 @@ class ArticleViewModel(
                                 nav.prefetchPrevious(context, article.id)
                             }
                         } else {
-                            content = "<h1>回答不存在</h1>"
+                            content = "<h1>你似乎来到了没有知识存在的荒原</h1>"
                             Log.e("ArticleViewModel", "Answer not found")
                         }
                     } else if (article.type == ArticleType.Article) {
@@ -445,7 +457,13 @@ class ArticleViewModel(
                         if (article != null) {
                             exportSourceContent = article
                             title = article.title
-                            content = article.content
+                            content = applySegmentInfosToHtml(
+                                content = article.content,
+                                segmentInfos = article.segmentInfos,
+                                sourceUrl = "https://zhuanlan.zhihu.com/p/${article.id}",
+                                contentId = article.id.toString(),
+                                contentType = "article",
+                            )
                             voteUpCount = article.voteupCount
                             commentCount = article.commentCount
                             authorId = article.author.id
@@ -453,6 +471,7 @@ class ArticleViewModel(
                             authorName = article.author.name
                             authorBio = article.author.headline
                             authorAvatarSrc = article.author.avatarUrl
+                            authorBadge = article.author.badgeV2.officialBadge()
                             voteUpState = when (article.reaction?.relation?.vote) {
                                 "UP" -> VoteUpState.Up
                                 "DOWN" -> VoteUpState.Down
@@ -481,7 +500,7 @@ class ArticleViewModel(
                                     ?: ContentOpenFrom.UNKNOWN,
                             )
                         } else {
-                            content = "<h1>文章不存在</h1>"
+                            content = "<h1>你似乎来到了没有知识存在的荒原</h1>"
                             Log.e("ArticleViewModel", "Article not found")
                         }
                     }

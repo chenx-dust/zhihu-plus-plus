@@ -54,3 +54,7 @@ __pycache__/
 .log/
 .codex/autoreview-state.json
 .codex/hooks/__pycache__/
+
+# IntelliJ generated apks
+app/lite
+app/full

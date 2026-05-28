@@ -21,12 +21,15 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.zly2006.zhihu.data.DataHolder
+import com.github.zly2006.zhihu.data.OfficialBadge
 import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
+import com.github.zly2006.zhihu.navigation.CollectionContent
 import com.github.zly2006.zhihu.navigation.Person
 import com.github.zly2006.zhihu.navigation.Pin
 import com.github.zly2006.zhihu.navigation.Question
@@ -36,6 +39,8 @@ import com.github.zly2006.zhihu.test.RecordingNavigator
 import com.github.zly2006.zhihu.test.performVerticalSwipeCycle
 import com.github.zly2006.zhihu.test.resetAppPreferences
 import com.github.zly2006.zhihu.test.setScreenContent
+import com.github.zly2006.zhihu.ui.FollowedQuestion
+import com.github.zly2006.zhihu.ui.FollowedTopic
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_ACTIVITIES_LIST_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_ANSWERS_LIST_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_ANSWER_COUNT_TAG
@@ -55,10 +60,12 @@ import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_FOLLOWING_COUNT_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_FOLLOWING_LIST_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_FOLLOW_BUTTON_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_HEADER_TAG
+import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_OFFICIAL_BADGE_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_PINS_LIST_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_QUESTIONS_LIST_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_RECOMMENDATION_BLOCK_BUTTON_TAG
 import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_ROOT_TAG
+import com.github.zly2006.zhihu.ui.PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG
 import com.github.zly2006.zhihu.ui.PeopleListUiState
 import com.github.zly2006.zhihu.ui.PeopleProfileUiState
 import com.github.zly2006.zhihu.ui.PeopleScreen
@@ -69,12 +76,15 @@ import com.github.zly2006.zhihu.ui.peopleScreenAnswerItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenArticleItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenCollectionItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenColumnItemTag
+import com.github.zly2006.zhihu.ui.peopleScreenFollowedQuestionItemTag
+import com.github.zly2006.zhihu.ui.peopleScreenFollowedTopicItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenFollowerActionTag
 import com.github.zly2006.zhihu.ui.peopleScreenFollowerItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenFollowingActionTag
 import com.github.zly2006.zhihu.ui.peopleScreenFollowingItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenPinItemTag
 import com.github.zly2006.zhihu.ui.peopleScreenQuestionItemTag
+import com.github.zly2006.zhihu.ui.peopleScreenSubscriptionTabTag
 import com.github.zly2006.zhihu.ui.peopleScreenTabTag
 import com.github.zly2006.zhihu.viewmodel.feed.BaseFeedViewModel
 import org.junit.Assert.assertEquals
@@ -124,6 +134,8 @@ class PeopleScreenInstrumentedTest {
 
         composeRule.onNodeWithTag(PEOPLE_SCREEN_ROOT_TAG).assertIsDisplayed()
         composeRule.onNodeWithTag(PEOPLE_SCREEN_HEADER_TAG).assertIsDisplayed()
+        composeRule.onNodeWithTag(PEOPLE_SCREEN_OFFICIAL_BADGE_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("社区成就: 英语等 5 个话题下的优秀答主").assertIsDisplayed()
         composeRule.onNodeWithTag(PEOPLE_SCREEN_AVATAR_TAG).assertIsDisplayed()
         composeRule.onNodeWithTag(PEOPLE_SCREEN_ANSWER_COUNT_TAG).assertIsDisplayed()
         composeRule.onNodeWithTag(PEOPLE_SCREEN_ARTICLE_COUNT_TAG).assertIsDisplayed()
@@ -297,6 +309,47 @@ class PeopleScreenInstrumentedTest {
         )
     }
 
+    @Test
+    fun followingSubscriptionsTabMatchesOfficialEntryPointsOffline() {
+        /*
+         * Expected behavior:
+         * 1. The profile tab row exposes a Zhihu-Web-style "关注订阅" entry.
+         * 2. Inside that page, non-duplicated official entry names are available as chips:
+         *    我订阅的专栏、关注的话题、关注的问题、关注的收藏夹.
+         * 3. Followed questions and followed collections use native navigation destinations,
+         *    matching the app's existing question and collection-detail screens.
+         */
+        val navigator = setPeopleScreen(
+            overrides = PeopleScreenTestOverrides(
+                initialUiState = seededUiState(itemCount = 8),
+                initialPage = 9,
+            ),
+        )
+
+        composeRule.onNodeWithTag(PEOPLE_SCREEN_SUBSCRIPTIONS_LIST_TAG).assertIsDisplayed()
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(0)).assertExists()
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(1)).assertExists()
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(2)).assertExists()
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(3)).assertExists()
+
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(1)).performClick()
+        composeRule.onNodeWithTag(peopleScreenFollowedTopicItemTag("topic-1")).assertIsDisplayed()
+
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(2)).performClick()
+        composeRule.onNodeWithTag(peopleScreenFollowedQuestionItemTag("1")).performClick()
+
+        composeRule.onNodeWithTag(peopleScreenSubscriptionTabTag(3)).performClick()
+        composeRule.onNodeWithTag(peopleScreenCollectionItemTag("follow-collection-1")).performClick()
+
+        assertEquals(
+            listOf(
+                Question(1L, "关注的问题 1"),
+                CollectionContent("follow-collection-1"),
+            ),
+            navigator.destinations,
+        )
+    }
+
     private fun setPeopleScreen(overrides: PeopleScreenTestOverrides): RecordingNavigator = composeRule.setScreenContent {
         PeopleScreen(
             person = ROOT_PERSON,
@@ -309,6 +362,14 @@ class PeopleScreenInstrumentedTest {
             avatar = "https://example.invalid/avatar/root.png",
             name = "离线用户",
             headline = "离线个人简介",
+            officialBadge = OfficialBadge(
+                title = "优秀答主",
+                description = "英语等 5 个话题下的优秀答主",
+                iconUrl = DataHolder.ZH_PLUS_AUTHOR_BADGE_ICON,
+            ),
+            officialBadgeDetails = listOf(
+                OfficialBadge("社区成就", "英语等 5 个话题下的优秀答主"),
+            ),
             followerCount = 120,
             followingCount = 45,
             answerCount = itemCount,
@@ -362,6 +423,22 @@ class PeopleScreenInstrumentedTest {
         ),
         following = PeopleListUiState(
             items = List(itemCount) { index -> seededPeople("following", index + 1, "关注的人") },
+            isEnd = false,
+        ),
+        followingColumns = PeopleListUiState(
+            items = List(itemCount) { index -> seededFollowedColumn(index + 1) },
+            isEnd = false,
+        ),
+        followingTopics = PeopleListUiState(
+            items = List(itemCount) { index -> seededFollowedTopic(index + 1) },
+            isEnd = false,
+        ),
+        followingQuestions = PeopleListUiState(
+            items = List(itemCount) { index -> seededFollowedQuestion(index + 1) },
+            isEnd = false,
+        ),
+        followingCollections = PeopleListUiState(
+            items = List(itemCount) { index -> seededFollowedCollection(index + 1) },
             isEnd = false,
         ),
     )
@@ -445,6 +522,33 @@ class PeopleScreenInstrumentedTest {
         description = "专栏描述 $index",
         articlesCount = index,
         followerCount = 30 + index,
+    )
+
+    private fun seededFollowedColumn(index: Int) = DataHolder.Column(
+        id = "follow-column-$index",
+        title = "我订阅的专栏 $index",
+        description = "订阅专栏描述 $index",
+        articlesCount = index,
+        followerCount = 30 + index,
+    )
+
+    private fun seededFollowedTopic(index: Int) = FollowedTopic(
+        id = "topic-$index",
+        name = "关注的话题 $index",
+        avatarUrl = "https://example.invalid/topic-$index.png",
+    )
+
+    private fun seededFollowedQuestion(index: Int) = FollowedQuestion(
+        id = index.toString(),
+        title = "关注的问题 $index",
+    )
+
+    private fun seededFollowedCollection(index: Int) = DataHolder.Collection(
+        id = "follow-collection-$index",
+        title = "关注的收藏夹 $index",
+        url = "https://www.zhihu.com/collection/follow-collection-$index",
+        answerCount = index,
+        followerCount = 40 + index,
     )
 
     private fun seededPeople(prefix: String, index: Int, namePrefix: String) = DataHolder.People(

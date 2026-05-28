@@ -40,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,18 +56,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.github.zly2006.zhihu.data.AccountData
+import com.github.zly2006.zhihu.latex.rememberLatexFonts
 import com.github.zly2006.zhihu.navigation.LocalNavigator
+import com.github.zly2006.zhihu.navigation.SegmentCommentHolder
 import com.github.zly2006.zhihu.navigation.Video
 import com.github.zly2006.zhihu.navigation.resolveContent
-import com.github.zly2006.zhihu.theme.ThemeManager
 import com.github.zly2006.zhihu.ui.PREFERENCE_NAME
+import com.github.zly2006.zhihu.ui.components.CommentScreenComponent
+import com.github.zly2006.zhihu.ui.components.LocalSegmentActionSheetHost
+import com.github.zly2006.zhihu.ui.components.LocalSegmentCommentHost
 import com.github.zly2006.zhihu.ui.components.OpenImageDialog
+import com.github.zly2006.zhihu.ui.components.SegmentActionSheet
+import com.github.zly2006.zhihu.ui.components.SegmentActionSheetState
 import com.github.zly2006.zhihu.ui.subscreens.PREF_FONT_SIZE
 import com.github.zly2006.zhihu.ui.subscreens.PREF_LINE_HEIGHT
 import com.github.zly2006.zhihu.util.luoTianYiUrlLauncher
@@ -207,6 +216,26 @@ fun RenderVideoBox(
     }
 }
 
+/**
+ * 禁用谷歌的双击选择文字功能。
+ *
+ * 比较hack的做法，但目前没有更好的方案了。
+ */
+@Composable
+private fun NoDoubleClickSelectionScope(content: @Composable () -> Unit) {
+    val current = LocalViewConfiguration.current
+    val patched =
+        remember(current) {
+            object : ViewConfiguration by current {
+                override val doubleTapTimeoutMillis: Long = 0L
+            }
+        }
+
+    CompositionLocalProvider(LocalViewConfiguration provides patched) {
+        content()
+    }
+}
+
 @Composable
 fun RenderMarkdown(
     html: String,
@@ -223,27 +252,52 @@ fun RenderMarkdown(
     val preferences = remember { context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE) }
     val fontSize = preferences.getInt(PREF_FONT_SIZE, 100)
     val lineHeight = preferences.getInt(PREF_LINE_HEIGHT, 160)
-    val defaultTheme = MarkdownTheme.auto(ThemeManager.isDarkTheme())
+    val defaultTheme = MarkdownTheme.material3()
+
+    val fontResult = rememberLatexFonts(context, AccountData.httpClient(context))
+    val mathFont = fontResult.downloaded?.mathFont ?: defaultTheme.mathFont
+
     val theme = defaultTheme.copy(
         bodyStyle = defaultTheme.bodyStyle.copy(
             fontSize = 16.sp * fontSize / 100,
             lineHeight = 16.sp * fontSize / 100 * lineHeight / 100,
         ),
         mathFontSize = 18f * fontSize / 100,
+        mathFont = mathFont,
     )
-    Markdown(
-        document = document,
-        modifier = modifier,
-        imageContent = ::RenderImage,
-        scrollState = scrollState,
-        enableScroll = enableScroll,
-        enableSelection = selectable,
-        onLinkClick = { url ->
-            resolveContent(url)?.let { navigator.onNavigate(it) }
-                ?: luoTianYiUrlLauncher(context, url.toUri())
-        },
-        header = header,
-        footer = footer,
-        theme = theme,
-    )
+    var segmentCommentTarget by remember { mutableStateOf<SegmentCommentHolder?>(null) }
+    var segmentActionSheetState by remember { mutableStateOf<SegmentActionSheetState?>(null) }
+    CompositionLocalProvider(
+        LocalSegmentCommentHost provides { target -> segmentCommentTarget = target },
+        LocalSegmentActionSheetHost provides { state -> segmentActionSheetState = state },
+    ) {
+        Box(modifier = modifier) {
+            NoDoubleClickSelectionScope {
+                Markdown(
+                    document = document,
+                    imageContent = ::RenderImage,
+                    scrollState = scrollState,
+                    enableScroll = enableScroll,
+                    enableSelection = selectable,
+                    onLinkClick = { url ->
+                        resolveContent(url)?.let { navigator.onNavigate(it) }
+                            ?: luoTianYiUrlLauncher(context, url.toUri())
+                    },
+                    header = header,
+                    footer = footer,
+                    theme = theme,
+                )
+            }
+        }
+    }
+    segmentCommentTarget?.let { target ->
+        CommentScreenComponent(
+            showComments = true,
+            onDismiss = { segmentCommentTarget = null },
+            content = target,
+        )
+    }
+    segmentActionSheetState?.let { state ->
+        SegmentActionSheet(state)
+    }
 }

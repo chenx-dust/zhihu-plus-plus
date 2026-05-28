@@ -81,7 +81,7 @@ adb shell monkey -p com.github.zly2006.zhplus.lite -c android.intent.category.LA
 2. ✅ 安装到设备
 3. ✅ 正确启动应用（检查包名！）
 4. ✅ 等待加载完成（至少 8-10 秒）
-5. ✅ 使用 ui-test 技能查看当前页面状态：`python3 .github/skills/ui-test/llm_test_helper.py dump`
+5. ✅ 使用 ui-test 技能查看当前页面状态：`python3 .agents/skills/ui-test/llm_test_helper.py dump`
 6. ✅ 先 `dump` 再 `tap`，优先通过 `--tag/--text/--desc` 交互，不使用硬编码坐标 tap
 7. ✅ 若目标是无标识可点击节点，使用 `--text "" --index N`（N 来自当前页面 dump）
 8. ✅ 交互后再次 `dump` 或截图验证状态
@@ -110,7 +110,7 @@ adb shell monkey -p com.github.zly2006.zhplus.lite -c android.intent.category.LA
 
 ```bash
 TODAY=$(date +%F)
-python3 .github/skills/ui-review-memory/memory_store.py update-status \
+python3 .agents/skills/ui-review-memory/memory_store.py update-status \
   --agent picky-user \
   --date "$TODAY" \
   --id PU-20260417-001 \
@@ -135,3 +135,9 @@ python3 .github/skills/ui-review-memory/memory_store.py update-status \
 - 不得擅自简化代码实现，如果确实有的功能难以实现，停下来等待我的反馈，不要私自修改设计。
 - 必须按照上述流程进行调试验证，尤其是 UI 相关的修改，不能跳过任何一步，确保你写的功能正常可用。
 - 每次修改完代码后必须进行review，不能直接提交，必须等待我的反馈和批准后才能合并到主分支。
+
+## Pull Requests
+
+当我要求你发 PR 的时候，PR 的title必须以feat: /fix: /refactor: 开头，标题和内容必须用中文写。
+提交PR前，先更新master与远程同步或领先，并确保当前分支基于master，而不包括其他feature branch的内容。
+如果一开始给你的提示词包括了issue链接，并且此PR解决了这个issue，应该写上Resolves #issue_number在PR描述里，这样GitHub会自动关联并在PR合并时关闭这个issue。
