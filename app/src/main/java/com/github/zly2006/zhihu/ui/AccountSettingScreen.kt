@@ -133,7 +133,7 @@ internal const val ACCOUNT_SETTINGS_LICENSES_TAG = "accountSettings.licenses"
 fun AccountSettingScreen(
     innerPadding: PaddingValues,
     unreadCount: Int = 0,
-    selectedSettingType: String? = null,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
     onDismissRequest: () -> Unit = {},
     refreshAccountProfileOnEnter: Boolean = true,
     testAccountData: AccountData.Data? = null,
@@ -170,8 +170,8 @@ fun AccountSettingScreen(
     val liveData by AccountData.asState()
     val data = testAccountData ?: liveData
 
-    fun isSelected(type: SettingsPaneDestination.Type) =
-        selectedSettingType == type.name
+    fun isSelected(type: PaneDestination.Type) =
+        (selectionState as? ListDetailSelectionState.ShowSelection)?.content?.type == type
 
     @Composable
     fun animatedSettingColors(selected: Boolean): CardColors {
@@ -483,7 +483,7 @@ fun AccountSettingScreen(
                     icon = { Icon(Icons.Default.Palette, null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_APPEARANCE_TAG),
                     onClick = { navigator.onNavigate(Account.AppearanceSettings()) },
-                    colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Appearance)),
+                    colors = animatedSettingColors(isSelected(PaneDestination.Type.Appearance)),
                 )
 
                 SettingItem(
@@ -492,7 +492,7 @@ fun AccountSettingScreen(
                     icon = { Icon(Icons.Default.FilterAlt, null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_RECOMMEND_TAG),
                     onClick = { navigator.onNavigate(Account.RecommendSettings()) },
-                    colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Recommend)),
+                    colors = animatedSettingColors(isSelected(PaneDestination.Type.Recommend)),
                 )
 
                 SettingItem(
@@ -501,7 +501,7 @@ fun AccountSettingScreen(
                     icon = { Icon(Icons.Default.Settings, null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_SYSTEM_TAG),
                     onClick = { navigator.onNavigate(Account.SystemAndUpdateSettings) },
-                    colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.SystemAndUpdate)),
+                    colors = animatedSettingColors(isSelected(PaneDestination.Type.SystemAndUpdate)),
                 )
 
                 AnimatedVisibility(isDeveloper) {
@@ -510,7 +510,7 @@ fun AccountSettingScreen(
                         icon = { Icon(Icons.Default.Code, null) },
                         modifier = Modifier.testTag(ACCOUNT_SETTINGS_DEVELOPER_TAG),
                         onClick = { navigator.onNavigate(Account.DeveloperSettings) },
-                        colors = animatedSettingColors(isSelected(SettingsPaneDestination.Type.Developer)),
+                        colors = animatedSettingColors(isSelected(PaneDestination.Type.Developer)),
                     )
                 }
             }

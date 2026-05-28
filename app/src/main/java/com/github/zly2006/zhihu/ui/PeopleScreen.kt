@@ -112,7 +112,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
-import org.jsoup.Jsoup
 import kotlin.reflect.typeOf
 
 class PeopleAnswersViewModel(
@@ -734,7 +733,7 @@ private fun PersonViewModel.toUiState(): PeopleScreenUiState = PeopleScreenUiSta
 fun PeopleScreen(
     person: Person,
     testOverrides: PeopleScreenTestOverrides? = null,
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current

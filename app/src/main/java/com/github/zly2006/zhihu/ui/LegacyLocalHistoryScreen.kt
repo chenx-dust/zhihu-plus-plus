@@ -30,7 +30,7 @@ import com.github.zly2006.zhihu.viewmodel.feed.HistoryViewModel
 @Composable
 fun LegacyLocalHistoryScreen(
     innerPadding: PaddingValues,
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val viewModel: HistoryViewModel = viewModel()
     val context = LocalContext.current

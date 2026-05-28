@@ -83,7 +83,6 @@ import com.github.zly2006.zhihu.ui.components.ProgressIndicatorFooter
 import com.github.zly2006.zhihu.viewmodel.feed.SearchViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 
@@ -115,7 +114,7 @@ private fun saveSearchHistory(
 @Composable
 fun SearchScreen(
     search: Search,
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
     testHotSearchQueries: List<String>? = null,
     onTestHotSearchRefresh: (() -> Unit)? = null,
 ) {

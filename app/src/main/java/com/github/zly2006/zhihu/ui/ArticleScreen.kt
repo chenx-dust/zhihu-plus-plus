@@ -633,7 +633,7 @@ private fun prepareContentDocument(content: String, context: Context): Document 
 fun ArticleScreen(
     article: Article,
     viewModel: ArticleViewModel,
-    paneNavigator: ThreePaneScaffoldNavigator<ContentPaneDestination>? = null,
+    paneNavigator: ThreePaneScaffoldNavigator<PaneDestination>? = null,
     parentNavigator: Navigator = LocalNavigator.current,
 ) {
     val navigator = LocalNavigator.current
@@ -973,7 +973,7 @@ fun ArticleScreen(
             sharedData.promoteForNavigation(sharedData.answerTransitionDirection)
             if (paneNavigator != null) {
                 coroutineScope.launch {
-                    while (paneNavigator.currentDestination?.contentKey?.type == ContentPaneDestination.Type.Answer) {
+                    while (paneNavigator.currentDestination?.contentKey?.type == PaneDestination.Type.Answer) {
                         paneNavigator.navigateBack(BackNavigationBehavior.PopLatest)
                     }
                 }
@@ -989,7 +989,7 @@ fun ArticleScreen(
                     sharedData.pendingInitialContent = prevCached
                     if (paneNavigator != null) {
                         coroutineScope.launch {
-                            while (paneNavigator.currentDestination?.contentKey?.type == ContentPaneDestination.Type.Answer) {
+                            while (paneNavigator.currentDestination?.contentKey?.type == PaneDestination.Type.Answer) {
                                 paneNavigator.navigateBack(BackNavigationBehavior.PopLatest)
                             }
                         }
@@ -1016,7 +1016,7 @@ fun ArticleScreen(
             sharedData.promoteForNavigation(sharedData.answerTransitionDirection)
             if (paneNavigator != null) {
                 coroutineScope.launch {
-                    while (paneNavigator.currentDestination?.contentKey?.type == ContentPaneDestination.Type.Answer) {
+                    while (paneNavigator.currentDestination?.contentKey?.type == PaneDestination.Type.Answer) {
                         paneNavigator.navigateBack(BackNavigationBehavior.PopLatest)
                     }
                 }
@@ -1031,7 +1031,7 @@ fun ArticleScreen(
                 if (nextArticle != null) {
                     if (paneNavigator != null) {
                         coroutineScope.launch {
-                            while (paneNavigator.currentDestination?.contentKey?.type == ContentPaneDestination.Type.Answer) {
+                            while (paneNavigator.currentDestination?.contentKey?.type == PaneDestination.Type.Answer) {
                                 paneNavigator.navigateBack(BackNavigationBehavior.PopLatest)
                             }
                         }

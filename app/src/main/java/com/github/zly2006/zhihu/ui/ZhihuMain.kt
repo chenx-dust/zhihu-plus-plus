@@ -79,7 +79,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
-import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItemColors
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
@@ -554,6 +553,7 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                     composable<MainTabs> {
                         ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
+                            onExit = reloadBottomBarPreferences,
                         ) { _, selectionState ->
                             MainTabsPager(
                                 pagerState = mainPagerState,
@@ -681,11 +681,15 @@ fun ZhihuMain(modifier: Modifier = Modifier, navController: NavHostController) {
                         }
                     }
                     composable<Account> {
-                        SettingsListDetailScreen(
-                            innerPadding = innerPadding,
+                        ContentListDetailScreen(
                             onSinglePaneDetailChanged = { isSinglePaneListDetailShowingDetail = it },
                             onExit = reloadBottomBarPreferences,
-                        )
+                        ) { _, selectionState ->
+                            AccountSettingScreen(
+                                innerPadding = innerPadding,
+                                selectionState = selectionState,
+                            )
+                        }
                     }
                     composable<Search> { navEntry ->
                         val search: Search = navEntry.toRoute()
@@ -788,7 +792,7 @@ private fun MainTabsPager(
     scrollToTopTrigger: Int,
     innerPadding: androidx.compose.foundation.layout.PaddingValues,
     onFollowTabSelected: (Int) -> Unit,
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     HorizontalPager(
         state = pagerState,
@@ -819,8 +823,11 @@ private fun MainTabsPager(
             )
             MainTabPage.HotListPage -> HotListScreen(innerPadding, selectionState)
             MainTabPage.DailyPage -> DailyScreen()
-            MainTabPage.OnlineHistoryPage -> OnlineHistoryScreen()
-            MainTabPage.AccountPage -> AccountSettingScreen(innerPadding)
+            MainTabPage.OnlineHistoryPage -> OnlineHistoryScreen(selectionState)
+            MainTabPage.AccountPage -> AccountSettingScreen(
+                innerPadding,
+                selectionState = selectionState
+            )
         }
     }
 }

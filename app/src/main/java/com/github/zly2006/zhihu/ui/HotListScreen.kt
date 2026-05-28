@@ -56,7 +56,7 @@ const val HOT_LIST_REFRESH_BUTTON_TAG = "hot_list_refresh_button"
 @Composable
 fun HotListScreen(
     innerPadding: PaddingValues = PaddingValues(0.dp),
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
     onTestRefreshClick: (() -> Unit)? = null,
     onTestLoadMore: (() -> Unit)? = null,
 ) {

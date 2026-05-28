@@ -20,7 +20,6 @@ package com.github.zly2006.zhihu.ui
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -66,7 +65,7 @@ internal const val ONLINE_HISTORY_OVERFLOW_TAG = "online_history_overflow"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnlineHistoryScreen(
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val navigator = LocalNavigator.current
     val viewModel: OnlineHistoryViewModel = viewModel()

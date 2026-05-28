@@ -84,7 +84,7 @@ data class CollectionContentScreenTestOverrides(
 @Composable
 fun CollectionContentScreen(
     collectionId: String,
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
     testOverrides: CollectionContentScreenTestOverrides? = null,
 ) {
     val navigator = LocalNavigator.current

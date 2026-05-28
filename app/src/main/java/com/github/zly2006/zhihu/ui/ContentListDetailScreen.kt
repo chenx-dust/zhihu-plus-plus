@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -13,6 +12,7 @@ import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.zly2006.zhihu.MainActivity
+import com.github.zly2006.zhihu.navigation.Account
 import com.github.zly2006.zhihu.navigation.Article
 import com.github.zly2006.zhihu.navigation.ArticleType
 import com.github.zly2006.zhihu.navigation.LocalNavigator
@@ -21,6 +21,19 @@ import com.github.zly2006.zhihu.navigation.Navigator
 import com.github.zly2006.zhihu.navigation.Person
 import com.github.zly2006.zhihu.navigation.Pin
 import com.github.zly2006.zhihu.navigation.Question
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.Appearance
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.Developer
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.DeveloperColorScheme
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.Recommend
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.RecommendBlockedHistory
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.RecommendBlocklist
+import com.github.zly2006.zhihu.ui.PaneDestination.Type.SystemAndUpdate
+import com.github.zly2006.zhihu.ui.subscreens.AppearanceSettingsScreen
+import com.github.zly2006.zhihu.ui.subscreens.BlockedFeedHistoryScreen
+import com.github.zly2006.zhihu.ui.subscreens.ColorSchemeScreen
+import com.github.zly2006.zhihu.ui.subscreens.ContentFilterSettingsScreen
+import com.github.zly2006.zhihu.ui.subscreens.DeveloperSettingsScreen
+import com.github.zly2006.zhihu.ui.subscreens.SystemAndUpdateSettingsScreen
 import com.github.zly2006.zhihu.viewmodel.ArticleViewModel
 import kotlinx.parcelize.Parcelize
 
@@ -28,7 +41,7 @@ import kotlinx.parcelize.Parcelize
 private val ContentListDetailBackBehavior = BackNavigationBehavior.PopUntilContentChange
 
 @Parcelize
-data class ContentPaneDestination(
+data class PaneDestination(
     val type: Type,
     val id: String,
     val articleType: String = "",
@@ -42,77 +55,109 @@ data class ContentPaneDestination(
         Question,
         Pin,
         Person,
+        Appearance,
+        Recommend,
+        SystemAndUpdate,
+        Developer,
+        DeveloperColorScheme,
+        RecommendBlocklist,
+        RecommendBlockedHistory,
     }
 }
 
-internal fun NavDestination.toContentPaneDestination(): ContentPaneDestination? = when (this) {
-    is Article -> ContentPaneDestination(
-        type = if (type == ArticleType.Answer) ContentPaneDestination.Type.Answer else ContentPaneDestination.Type.Article,
+internal fun NavDestination.toContentPaneDestination(): PaneDestination? = when (this) {
+    is Article -> PaneDestination(
+        type = if (type == ArticleType.Answer) PaneDestination.Type.Answer else PaneDestination.Type.Article,
         id = id.toString(),
         articleType = type.name,
         title = title,
     )
 
-    is Question -> ContentPaneDestination(
-        type = ContentPaneDestination.Type.Question,
+    is Question -> PaneDestination(
+        type = PaneDestination.Type.Question,
         id = questionId.toString(),
         title = title,
     )
 
-    is Pin -> ContentPaneDestination(
-        type = ContentPaneDestination.Type.Pin,
+    is Pin -> PaneDestination(
+        type = PaneDestination.Type.Pin,
         id = id.toString(),
     )
 
-    is Person -> ContentPaneDestination(
-        type = ContentPaneDestination.Type.Person,
+    is Person -> PaneDestination(
+        type = PaneDestination.Type.Person,
         id = id,
         urlToken = urlToken,
         title = name,
         jumpTo = jumpTo,
     )
 
+    is Account.AppearanceSettings -> PaneDestination(
+        type = Appearance,
+        id = setting,
+    )
+
+    is Account.RecommendSettings -> PaneDestination(
+        type = Recommend,
+        id = setting,
+    )
+
+    Account.SystemAndUpdateSettings -> PaneDestination(SystemAndUpdate, id = "")
+    Account.DeveloperSettings -> PaneDestination(Developer, id = "")
+    Account.DeveloperSettings.ColorScheme -> PaneDestination(DeveloperColorScheme, id = "")
+    Account.RecommendSettings.Blocklist -> PaneDestination(RecommendBlocklist, id = "")
+    Account.RecommendSettings.BlockedFeedHistory -> PaneDestination(RecommendBlockedHistory, id = "")
+
     else -> null
 }
 
 internal fun NavDestination?.matchesContentSelection(
-    selectionState: ListDetailSelectionState<ContentPaneDestination>,
+    selectionState: ListDetailSelectionState<PaneDestination>,
 ): Boolean = this?.toContentPaneDestination() ==
     (selectionState as? ListDetailSelectionState.ShowSelection)?.content
 
-private fun ContentPaneDestination.toNavDestination(): NavDestination? = when (type) {
-    ContentPaneDestination.Type.Answer -> Article(
+private fun PaneDestination.toNavDestination(): NavDestination? = when (type) {
+    PaneDestination.Type.Answer -> Article(
         type = ArticleType.Answer,
         id = id.toLongOrNull() ?: return null,
         title = title,
     )
 
-    ContentPaneDestination.Type.Article -> Article(
+    PaneDestination.Type.Article -> Article(
         type = ArticleType.Article,
         id = id.toLongOrNull() ?: return null,
         title = title,
     )
 
-    ContentPaneDestination.Type.Question -> Question(
+    PaneDestination.Type.Question -> Question(
         questionId = id.toLongOrNull() ?: return null,
         title = title,
     )
 
-    ContentPaneDestination.Type.Pin -> Pin(id = id.toLongOrNull() ?: return null)
+    PaneDestination.Type.Pin -> Pin(id = id.toLongOrNull() ?: return null)
 
-    ContentPaneDestination.Type.Person -> Person(
+    PaneDestination.Type.Person -> Person(
         id = id,
         urlToken = urlToken,
         name = title,
         jumpTo = jumpTo,
     )
+
+    Appearance -> Account.AppearanceSettings(setting = id)
+    Recommend -> Account.RecommendSettings(setting = id)
+    SystemAndUpdate -> Account.SystemAndUpdateSettings
+    Developer -> Account.DeveloperSettings
+    DeveloperColorScheme -> Account.DeveloperSettings.ColorScheme
+    RecommendBlocklist -> Account.RecommendSettings.Blocklist
+    RecommendBlockedHistory -> Account.RecommendSettings.BlockedFeedHistory
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun ContentListDetailScreen(
     onSinglePaneDetailChanged: (Boolean) -> Unit = {},
-    listPane: @Composable (Navigator, ListDetailSelectionState<ContentPaneDestination>) -> Unit,
+    onExit: () -> Unit = {},
+    listPane: @Composable (Navigator, ListDetailSelectionState<PaneDestination>) -> Unit,
 ) {
     val activity = androidx.activity.compose.LocalActivity.current as MainActivity
     val parentNavigator = LocalNavigator.current
@@ -181,6 +226,39 @@ fun ContentListDetailScreen(
                         PeopleScreen(
                             person = currentDestination,
                         )
+                    }
+
+                    is Account.AppearanceSettings -> {
+                        AppearanceSettingsScreen(
+                            setting = currentDestination.setting,
+                            onExit = onExit,
+                        )
+                    }
+
+                    is Account.RecommendSettings -> {
+                        ContentFilterSettingsScreen(
+                            setting = currentDestination.setting,
+                        )
+                    }
+
+                    is Account.SystemAndUpdateSettings -> {
+                        SystemAndUpdateSettingsScreen()
+                    }
+
+                    is Account.DeveloperSettings -> {
+                        DeveloperSettingsScreen()
+                    }
+
+                    is Account.DeveloperSettings.ColorScheme -> {
+                        ColorSchemeScreen()
+                    }
+
+                    is Account.RecommendSettings.Blocklist -> {
+                        BlocklistSettingsScreen()
+                    }
+
+                    is Account.RecommendSettings.BlockedFeedHistory -> {
+                        BlockedFeedHistoryScreen()
                     }
 
                     else -> {

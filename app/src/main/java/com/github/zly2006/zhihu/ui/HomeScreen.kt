@@ -197,7 +197,7 @@ interface IHomeFeedViewModel {
 fun HomeScreen(
     scrollToTopTrigger: Int = 0,
     innerPadding: PaddingValues,
-    selectionState: ListDetailSelectionState<ContentPaneDestination> = ListDetailSelectionState.NoSelection,
+    selectionState: ListDetailSelectionState<PaneDestination> = ListDetailSelectionState.NoSelection,
 ) {
     val navigator = LocalNavigator.current
     val context = LocalActivity.current as MainActivity
