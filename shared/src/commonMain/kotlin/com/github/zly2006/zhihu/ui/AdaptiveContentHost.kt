@@ -10,6 +10,7 @@
 package com.github.zly2006.zhihu.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.dp
 import com.github.zly2006.zhihu.navigation.NavDestination
@@ -62,6 +63,9 @@ typealias AdaptiveContentHost = @Composable (
 
 /** Currently selected content, exposed to list cards for a lightweight highlight. */
 val LocalAdaptiveSelection = compositionLocalOf<NavDestination?> { null }
+
+/** 当前详情页的沉浸式状态，供外层布局收起列表栏。 */
+val LocalAdaptiveDetailImmersiveMode = compositionLocalOf<MutableState<Boolean>?> { null }
 
 /** Bottom-bar space owned by the outer application scaffold. */
 val LocalAdaptiveDetailBottomPadding = compositionLocalOf { 0.dp }
