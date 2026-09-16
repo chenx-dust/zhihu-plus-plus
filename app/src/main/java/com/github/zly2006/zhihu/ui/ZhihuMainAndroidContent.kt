@@ -28,12 +28,16 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.github.zly2006.zhihu.MainActivity
+import com.github.zly2006.zhihu.navigation.NavDestination
+import com.github.zly2006.zhihu.navigation.Video
 import com.github.zly2006.zhihu.platform.androidUserMessageSink
 import com.github.zly2006.zhihu.viewmodel.ArticleViewModel
 import com.github.zly2006.zhihu.viewmodel.sharedArticleAnswerSwitchState
@@ -47,14 +51,10 @@ import com.github.zly2006.zhihu.viewmodel.sharedArticleAnswerSwitchState
 @Composable
 fun AndroidZhihuMain(navController: NavHostController) {
     val activity = LocalActivity.current as MainActivity
-    val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
     ZhihuMain(
         navController = navController,
         mainTabNavigationTarget = activity.mainTabNavigationTarget,
         navigate = activity::navigate,
-        navigateContent = activity::navigateIn,
-        enableLandscapeListDetail = true,
-        isListDetailCapable = isTablet,
         setCurrentMainTabOpenFrom = activity::setCurrentMainTabOpenFrom,
         consumeMainTabNavigationTarget = activity::consumeMainTabNavigationTarget,
         preferenceState = rememberAndroidZhihuMainPreferenceState(),
@@ -96,6 +96,26 @@ fun AndroidZhihuMain(navController: NavHostController) {
                 }
             }
             ArticleScreen(article, viewModel)
+        },
+        mainNavigationScaffold = ::AndroidMainNavigationScaffold,
+        adaptiveContentHost = ::AndroidAdaptiveContentHost,
+        articlePaneContent = { article ->
+            val viewModel: ArticleViewModel = viewModel {
+                ArticleViewModel(article, activity.httpClient, androidUserMessageSink(activity))
+            }
+            LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+                viewModel.rememberedScrollYSync = false
+            }
+            DisposableEffect(viewModel) {
+                onDispose { viewModel.rememberedScrollYSync = false }
+            }
+            ArticleScreen(article, viewModel)
+        },
+        onAdaptiveDestinationOpened = { destination, openFrom ->
+            activity.preparePaneNavigation(destination, openFrom)
+        },
+        onAdaptiveVideoOpened = { video: Video, source: NavDestination? ->
+            activity.navigate(video, currentContent = source)
         },
         sentenceSimilarityContent = {
             SentenceSimilarityTestScreen()

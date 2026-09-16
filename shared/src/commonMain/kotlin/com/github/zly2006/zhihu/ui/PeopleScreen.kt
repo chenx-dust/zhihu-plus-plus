@@ -662,7 +662,9 @@ fun PeopleScreen(
     val navigator = LocalNavigator.current
     val userMessages = rememberUserMessageSink()
     val paginationEnvironment = rememberPaginationEnvironment(allowGuestAccess = false)
-    val viewModel = composeViewModel { PersonViewModel(person) }
+    val viewModel = composeViewModel(
+        key = "person-${person.id}-${person.urlToken}",
+    ) { PersonViewModel(person) }
     val coroutineScope = rememberCoroutineScope()
 
     val pagerState = rememberPagerState(

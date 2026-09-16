@@ -96,6 +96,8 @@ import com.github.zly2006.zhihu.navigation.MyCollections
 import com.github.zly2006.zhihu.navigation.OnlineHistory
 import com.github.zly2006.zhihu.navigation.TopLevelDestination
 import com.github.zly2006.zhihu.platform.isAnswerSwipeSupported
+import com.github.zly2006.zhihu.platform.isJvm
+import com.github.zly2006.zhihu.platform.isNative
 import com.github.zly2006.zhihu.platform.isPageTurnSupported
 import com.github.zly2006.zhihu.platform.platformBottomBarItemLimit
 import com.github.zly2006.zhihu.platform.rememberSettingsStore
@@ -142,6 +144,7 @@ const val DEFAULT_SHOW_PAGE_TURN_GUIDE = false
 const val PREF_SHOW_CONTENT_END_MARKER = "showContentEndMarker"
 const val DEFAULT_SHOW_CONTENT_END_MARKER = false
 const val PREF_VOLUME_KEY_PAGE_TURN = "volumeKeyPageTurn"
+const val LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY = "listPaneDefaultWidthDp"
 const val APPEARANCE_SETTINGS_SCROLL_TAG = "appearanceSettings.scroll"
 const val APPEARANCE_SETTINGS_START_DESTINATION_TAG = "appearanceSettings.startDestination"
 const val APPEARANCE_SETTINGS_ANSWER_DOUBLE_TAP_TAG = "appearanceSettings.answerDoubleTap"
@@ -1585,6 +1588,44 @@ fun AppearanceSettingsScreen(
                     highlightedKey = settingKey,
                     bringIntoViewRequester = requesterFor("enable_predictive_back"),
                 )
+
+                if (!isJvm && !isNative) {
+                    var listPaneDefaultWidthDp by remember {
+                        mutableIntStateOf(
+                            settings
+                                .getInt(LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY, 320)
+                                .coerceIn(280, 440),
+                        )
+                    }
+                    SettingItem(
+                        title = { Text("双栏列表默认宽度") },
+                        description = {
+                            Text("首页、搜索、设置等双栏布局左侧列表宽度：${listPaneDefaultWidthDp}dp")
+                        },
+                        bottomAction = {
+                            Slider(
+                                value = listPaneDefaultWidthDp.toFloat(),
+                                onValueChange = { value ->
+                                    val snappedWidth = (((value.toInt() + 10 - 280) / 20) * 20 + 280)
+                                        .coerceIn(280, 440)
+                                    if (snappedWidth != listPaneDefaultWidthDp) {
+                                        listPaneDefaultWidthDp = snappedWidth
+                                        settings.putInt(
+                                            LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY,
+                                            snappedWidth,
+                                        )
+                                    }
+                                },
+                                valueRange = 280f..440f,
+                                steps = 7,
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            )
+                        },
+                        settingKey = LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY,
+                        highlightedKey = settingKey,
+                        bringIntoViewRequester = requesterFor(LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY),
+                    )
+                }
             }
             // ── 123duo3 UI 改进 ─────────────────────────────────────────────────
 
