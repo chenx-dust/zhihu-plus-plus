@@ -74,6 +74,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -279,6 +280,10 @@ fun ArticleScreen(
     val sharedData = sharedArticleAnswerSwitchState.takeIf { article.type == ArticleType.Answer }
     var isImmersiveMode by remember(sharedData) {
         mutableStateOf(sharedData?.isImmersiveMode ?: false)
+    }
+    val adaptiveImmersiveMode = LocalAdaptiveDetailImmersiveMode.current
+    SideEffect {
+        adaptiveImmersiveMode?.value = isImmersiveMode
     }
     val answerNavigationState = rememberArticleAnswerNavigationState(
         switchState = sharedData,
