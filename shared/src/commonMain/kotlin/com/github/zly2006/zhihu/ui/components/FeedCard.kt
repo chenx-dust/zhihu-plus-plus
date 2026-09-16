@@ -18,6 +18,9 @@
 package com.github.zly2006.zhihu.ui.components
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +43,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,8 +64,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -84,6 +86,7 @@ import com.github.zly2006.zhihu.platform.UserMessageDuration
 import com.github.zly2006.zhihu.platform.rememberSettingsStore
 import com.github.zly2006.zhihu.platform.rememberUserMessageSink
 import com.github.zly2006.zhihu.ui.LocalSelectedContentDestination
+import com.github.zly2006.zhihu.ui.LocalAdaptiveSelection
 import com.github.zly2006.zhihu.ui.subscreens.PREF_FONT_SIZE
 import com.github.zly2006.zhihu.ui.subscreens.PREF_LINE_HEIGHT
 import com.github.zly2006.zhihu.util.parseEmphasizedHtmlTextWithTheme
@@ -115,10 +118,10 @@ fun FeedCard(
     onClick: ((item: FeedDisplayItem, destination: NavDestination?) -> Unit)? = null,
 ) {
     val navigator = LocalNavigator.current
+    val selectedDestination = LocalAdaptiveSelection.current ?: LocalSelectedContentDestination.current
     val uriHandler = LocalUriHandler.current
     val userMessages = rememberUserMessageSink()
     val settings = rememberSettingsStore()
-    val selectedDestination = LocalSelectedContentDestination.current
     var showMenu by remember { mutableStateOf(false) }
     val showFeedThumbnail = remember {
         settings.getBoolean("showFeedThumbnail", true)
@@ -134,8 +137,44 @@ fun FeedCard(
         ?.filterIsInstance<DataHolder.Pin.ContentImage>()
         .orEmpty()
     val showPinImages = showFeedThumbnail && pinImages.isNotEmpty() && !item.isFiltered
-    val isSelected = item.navDestination != null && item.navDestination == selectedDestination
-    val selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)
+    val isSelected = item.navDestination?.let { selectedDestination == it } == true
+    val defaultCardColors = if (duo3CardAppearance) {
+        CardDefaults.cardColors().copy(containerColor = MaterialTheme.colorScheme.surfaceBright)
+    } else {
+        CardDefaults.cardColors()
+    }
+    val selectedCardContainerColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            defaultCardColors.containerColor
+        },
+        animationSpec = tween(150),
+        label = "feedCardSelectionContainerColor",
+    )
+    val selectedCardContentColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            defaultCardColors.contentColor
+        },
+        animationSpec = tween(150),
+        label = "feedCardSelectionContentColor",
+    )
+    val selectedCardBorderColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.secondary else Color.Transparent,
+        animationSpec = tween(150),
+        label = "feedCardSelectionBorderColor",
+    )
+    val selectedDividerBackgroundColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)
+        } else {
+            Color.Transparent
+        },
+        animationSpec = tween(150),
+        label = "feedCardSelectionBackground",
+    )
     val performClick: (FeedDisplayItem) -> Unit = { clickedItem ->
         val destination = clickedItem.navDestination?.withReadingQueueSource(readingQueueSourceId)
         if (onClick != null) {
@@ -154,13 +193,12 @@ fun FeedCard(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .semantics { selected = isSelected }
-                .then(if (isSelected) Modifier.background(selectedContainerColor) else Modifier)
                 .then(if (showPinImages || duo3CardLayout) Modifier else Modifier.heightIn(max = maxHeight)),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(selectedDividerBackgroundColor)
                     .clickable { performClick(item) }
                     .padding(horizontal = horizontalPadding, vertical = 12.dp),
             ) {
@@ -183,25 +221,22 @@ fun FeedCard(
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .semantics { selected = isSelected }
                 .then(if (showPinImages || duo3CardLayout) Modifier else Modifier.heightIn(max = maxHeight))
                 .padding(horizontal = horizontalPadding, vertical = 8.dp),
         ) {
             Card(
-                colors = if (isSelected) {
-                    CardDefaults.cardColors(containerColor = selectedContainerColor)
-                } else if (duo3CardAppearance) {
-                    CardDefaults.cardColors().copy(
-                        containerColor = MaterialTheme.colorScheme.surfaceBright,
-                    )
-                } else {
-                    CardDefaults.cardColors()
-                },
+                colors = CardColors(
+                    containerColor = selectedCardContainerColor,
+                    contentColor = selectedCardContentColor,
+                    disabledContainerColor = selectedCardContainerColor,
+                    disabledContentColor = defaultCardColors.disabledContentColor,
+                ),
                 shape = if (duo3CardAppearance) RoundedCornerShape(24.dp) else CardDefaults.shape,
                 modifier = Modifier
                     .fillMaxWidth()
                     .let { if (duo3CardAppearance) it.clip(RoundedCornerShape(24.dp)) else it }
                     .clickable { performClick(item) },
+                border = BorderStroke(1.dp, selectedCardBorderColor),
                 elevation = if (duo3CardAppearance) {
                     CardDefaults.cardElevation()
                 } else {

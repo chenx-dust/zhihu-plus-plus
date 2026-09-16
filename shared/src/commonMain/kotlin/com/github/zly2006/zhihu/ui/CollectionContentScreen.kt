@@ -81,7 +81,9 @@ fun CollectionContentScreen(
     collectionId: String,
 ) {
     val navigator = LocalNavigator.current
-    val screenViewModel = viewModel { CollectionContentViewModel(collectionId) }
+    val screenViewModel = viewModel(key = "collection-content-$collectionId") {
+        CollectionContentViewModel(collectionId)
+    }
     val collectionEnvironment = rememberPaginationEnvironment(allowGuestAccess = false) as CollectionContentEnvironment
     val listState = rememberLazyListState()
     var showActionsMenu by remember { mutableStateOf(false) }
@@ -214,7 +216,8 @@ internal fun CollectionContentBody(
         onLoadMore = { viewModel.loadMore(environment) },
         isEnd = { viewModel.isEnd },
         listState = listState,
-        modifier = modifier.testTag("${tagPrefix}_list"),
+        modifier = modifier
+            .testTag("${tagPrefix}_list"),
         footer = ProgressIndicatorFooter,
         topContent = {
             item(0) {
@@ -237,10 +240,7 @@ internal fun CollectionContentBody(
         FeedCard(
             item = item,
             readingQueueSourceId = readingQueueSourceId,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .testTag("${tagPrefix}_item_${item.stableKey}"),
+            modifier = Modifier.testTag("${tagPrefix}_item_${item.stableKey}"),
         ) { _, destination ->
             if (destination is Article && destination.type == ArticleType.Answer) {
                 val index = displayItems.indexOf(item)

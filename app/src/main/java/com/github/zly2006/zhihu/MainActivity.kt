@@ -403,8 +403,8 @@ class MainActivity : ComponentActivity() {
      * @param route 要打开的页面
      * @param popup 是否替换当前外部跳转页面
      */
-    fun navigate(route: NavDestination, popup: Boolean = false) {
-        navigate(route, navController, popup)
+    fun navigate(route: NavDestination, popup: Boolean = false, currentContent: NavDestination? = null) {
+        navigate(route, navController, popup, currentContent)
     }
 
     /**
@@ -424,6 +424,7 @@ class MainActivity : ComponentActivity() {
         route: NavDestination,
         targetController: NavHostController,
         popup: Boolean,
+        currentContent: NavDestination? = null,
     ) {
         if (route is CommentHolder) {
             AndroidArticleNavigationHandoff.prepareComment(route)
@@ -434,7 +435,7 @@ class MainActivity : ComponentActivity() {
         preparePendingContentOpen(route, targetController)
         history.add(route)
         if (route is Video) {
-            val current = runCatching {
+            val current = currentContent?.takeIf { it is Article || it is Question } ?: runCatching {
                 targetController.currentBackStackEntry?.toRoute<Article>()
             }.getOrNull() ?: runCatching {
                 targetController.currentBackStackEntry?.toRoute<Question>()
@@ -489,12 +490,27 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Performs the bookkeeping shared by normal and adaptive-pane navigation.
+     * The pane already owns rendering and back-stack state, so this method
+     * intentionally does not push another NavHost entry.
+     */
+    fun preparePaneNavigation(
+        route: NavDestination,
+        openFrom: String? = null,
+    ) {
+        AndroidArticleNavigationHandoff.clearCommentUnless(route)
+        preparePendingContentOpen(route, navController, openFrom)
+        history.add(route)
+    }
+
     /** [sourceController] 提供触发导航的来源页面，用于记录内容打开来源。 */
     private fun preparePendingContentOpen(
         target: NavDestination,
         sourceController: NavHostController,
+        explicitOpenFrom: String? = null,
     ) {
-        val openFrom = if (
+        val openFrom = explicitOpenFrom?.takeIf { it.isNotBlank() } ?: if (
             runCatching { navController.currentBackStackEntry?.toRoute<MainTabs>() }.getOrNull() != null
         ) {
             currentMainTabOpenFrom

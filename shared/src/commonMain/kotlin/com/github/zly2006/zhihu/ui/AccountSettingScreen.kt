@@ -18,6 +18,7 @@
 package com.github.zly2006.zhihu.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,6 +57,7 @@ import androidx.compose.material.icons.filled.SwitchAccount
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -83,6 +85,7 @@ import com.github.zly2006.zhihu.account.rememberZhihuAccountStore
 import com.github.zly2006.zhihu.navigation.Account
 import com.github.zly2006.zhihu.navigation.Collections
 import com.github.zly2006.zhihu.navigation.LocalNavigator
+import com.github.zly2006.zhihu.navigation.NavDestination
 import com.github.zly2006.zhihu.navigation.Notification
 import com.github.zly2006.zhihu.navigation.OnlineHistory
 import com.github.zly2006.zhihu.navigation.Person
@@ -128,6 +131,26 @@ const val ACCOUNT_SETTINGS_DEVELOPER_TAG = "accountSettings.developer"
 const val ACCOUNT_SETTINGS_LICENSES_TAG = "accountSettings.licenses"
 const val ACCOUNT_SETTINGS_IDENTITY_MANAGEMENT_TAG = "accountSettings.identityManagement"
 
+private enum class AdaptiveSettingsGroup {
+    Appearance,
+    Recommend,
+    SystemAndUpdate,
+    Developer,
+}
+
+private fun NavDestination.adaptiveSettingsGroup(): AdaptiveSettingsGroup? = when (this) {
+    is Account.AppearanceSettings -> AdaptiveSettingsGroup.Appearance
+    is Account.RecommendSettings,
+    Account.RecommendSettings.Blocklist,
+    Account.RecommendSettings.BlockedFeedHistory,
+    -> AdaptiveSettingsGroup.Recommend
+    is Account.SystemAndUpdateSettings -> AdaptiveSettingsGroup.SystemAndUpdate
+    Account.DeveloperSettings,
+    Account.DeveloperSettings.ColorScheme,
+    -> AdaptiveSettingsGroup.Developer
+    else -> null
+}
+
 /**
  * 账号与设置入口页。
  *
@@ -158,6 +181,36 @@ fun AccountSettingScreen(
     val systemUpdateState = rememberSystemUpdateState()
     val versionInfo = rememberAppVersionInfo()
     val readingPlayerSupported = isReadingPlayerSupported
+    val selectedDestination = LocalAdaptiveSelection.current
+    val selectedSettingsGroup = selectedDestination?.adaptiveSettingsGroup()
+
+    @Composable
+    fun settingColors(destination: NavDestination): CardColors {
+        val selected = selectedSettingsGroup != null &&
+            selectedSettingsGroup == destination.adaptiveSettingsGroup()
+        val containerColor by animateColorAsState(
+            targetValue = if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceBright
+            },
+            label = "settingSelectionContainerColor",
+        )
+        val contentColor by animateColorAsState(
+            targetValue = if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            label = "settingSelectionContentColor",
+        )
+        return CardColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = containerColor,
+            disabledContentColor = MaterialTheme.colorScheme.outlineVariant,
+        )
+    }
 
     val useDuo3HomeAccount = remember { settings.getBoolean("duo3_home_account", false) }
     val selectedBottomBarItemKeys = remember {
@@ -480,6 +533,7 @@ fun AccountSettingScreen(
                     icon = { Icon(Icons.Default.Palette, null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_APPEARANCE_TAG),
                     onClick = { navigator.onNavigate(Account.AppearanceSettings()) },
+                    colors = settingColors(Account.AppearanceSettings()),
                 )
 
                 if (readingPlayerSupported) {
@@ -498,6 +552,7 @@ fun AccountSettingScreen(
                     icon = { Icon(Icons.Default.FilterAlt, null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_RECOMMEND_TAG),
                     onClick = { navigator.onNavigate(Account.RecommendSettings()) },
+                    colors = settingColors(Account.RecommendSettings()),
                 )
 
                 SettingItem(
@@ -506,6 +561,7 @@ fun AccountSettingScreen(
                     icon = { Icon(Icons.Default.Settings, null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_SYSTEM_TAG),
                     onClick = { navigator.onNavigate(Account.SystemAndUpdateSettings()) },
+                    colors = settingColors(Account.SystemAndUpdateSettings()),
                 )
 
                 AnimatedVisibility(isDeveloper) {
@@ -514,6 +570,7 @@ fun AccountSettingScreen(
                         icon = { Icon(Icons.Default.Code, null) },
                         modifier = Modifier.testTag(ACCOUNT_SETTINGS_DEVELOPER_TAG),
                         onClick = { navigator.onNavigate(Account.DeveloperSettings) },
+                        colors = settingColors(Account.DeveloperSettings),
                     )
                 }
             }

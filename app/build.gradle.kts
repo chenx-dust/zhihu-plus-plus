@@ -185,6 +185,8 @@ val aboutLibraries = "15.0.0"
 val composeVersion = "1.11.1"
 val jetbrainsLifecycleVersion = "2.10.0"
 val androidxLifecycleVersion = "2.11.0"
+val composeAdaptiveVersion = "1.3.0-alpha09"
+val composeNavigationSuiteVersion = "1.5.0-alpha08"
 
 // Force material3 to 1.10.0-alpha05，与 shared 模块保持一致。
 // 根因：shared 模块 commonMain 通过 material-kolor 的 strictly 约束解析到 1.10.0-alpha05，
@@ -239,6 +241,9 @@ dependencies {
     implementation("org.jetbrains.compose.runtime:runtime:$composeVersion")
     implementation("org.jetbrains.compose.foundation:foundation:$composeVersion")
     implementation("org.jetbrains.compose.material3:material3:1.10.0-alpha05")
+    implementation("androidx.compose.material3.adaptive:adaptive:$composeAdaptiveVersion")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:$composeAdaptiveVersion")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:$composeNavigationSuiteVersion")
     implementation("org.jetbrains.compose.ui:ui:$composeVersion")
     implementation("org.jetbrains.compose.ui:ui-graphics:$composeVersion")
     implementation("org.jetbrains.compose.animation:animation:$composeVersion")

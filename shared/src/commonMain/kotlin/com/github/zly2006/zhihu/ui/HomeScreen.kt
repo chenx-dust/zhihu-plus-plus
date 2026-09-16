@@ -553,7 +553,7 @@ fun HomeScreen(
                             modifier = Modifier
                                 .testTag(HOME_TOP_ACTIONS_TAG)
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Surface(
