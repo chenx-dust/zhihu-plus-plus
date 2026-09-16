@@ -76,7 +76,7 @@ fun CollectionScreen(
 ) {
     val navigator = LocalNavigator.current
     val environment = rememberPaginationEnvironment(allowGuestAccess = false)
-    val viewModel: CollectionsViewModel = viewModel(key = urlToken) {
+    val viewModel: CollectionsViewModel = viewModel(key = "collections-${urlToken.orEmpty()}") {
         CollectionsViewModel(urlToken.orEmpty())
     }
     val userMessages = rememberUserMessageSink()

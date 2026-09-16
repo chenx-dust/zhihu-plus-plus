@@ -95,7 +95,7 @@ fun CollectionBrowseScreen(
     val environment = rememberPaginationEnvironment(allowGuestAccess = false)
     val contentEnvironment = environment as CollectionContentEnvironment
     val useLocalCollections = urlToken == null
-    val collectionsViewModel: CollectionsViewModel = viewModel(key = urlToken) {
+    val collectionsViewModel: CollectionsViewModel = viewModel(key = "collections-${urlToken.orEmpty()}") {
         CollectionsViewModel(urlToken.orEmpty())
     }
     val collections = collectionsViewModel.allData
@@ -132,7 +132,7 @@ fun CollectionBrowseScreen(
 
     val selectedCollection = collections.firstOrNull { it.id == selectedCollectionId }
     val contentViewModel: CollectionContentViewModel? = selectedCollectionId?.let { collectionId ->
-        viewModel(key = collectionId) { CollectionContentViewModel(collectionId) }
+        viewModel(key = "collection-content-$collectionId") { CollectionContentViewModel(collectionId) }
     }
     val selectedCollectionItemCount = selectedCollection
         ?.itemCount

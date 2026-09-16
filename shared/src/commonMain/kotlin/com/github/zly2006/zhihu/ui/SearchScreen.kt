@@ -170,7 +170,11 @@ fun SearchScreen(
     val navigator = LocalNavigator.current
     val userMessages = rememberUserMessageSink()
     val settings = rememberSettingsStore()
-    val viewModel = viewModel { SearchViewModel(search.query, search.restrictedMemberHashId) }
+    val viewModel = viewModel(
+        key = "search-${search.query}-${search.restrictedMemberHashId}",
+    ) {
+        SearchViewModel(search.query, search.restrictedMemberHashId)
+    }
     val readingQueueSourceId = buildString {
         append("search:")
         append(search.restrictedMemberHashId)
