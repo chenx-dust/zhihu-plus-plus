@@ -553,7 +553,8 @@ fun HomeScreen(
                             modifier = Modifier
                                 .testTag(HOME_TOP_ACTIONS_TAG)
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 16.dp)
+                                .padding(top = 4.dp, bottom = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Surface(
@@ -591,7 +592,7 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(36.dp)
                                     .testTag(HOME_NOTIFICATION_BUTTON_TAG)
                                     .clickable(role = Role.Button) {
                                         navigator.onNavigate(Notification)
@@ -649,7 +650,7 @@ fun HomeScreen(
                         .pageTurnViewportWithGuide(pageTurnTarget)
                         .testTag(HOME_FEED_LIST_TAG),
                     contentPadding = PaddingValues(
-                        top = scaffoldPadding.calculateTopPadding() + 8.dp,
+                        top = scaffoldPadding.calculateTopPadding() + 4.dp,
                         bottom = innerPadding.calculateBottomPadding() + readingPlayerOverlayPadding,
                     ),
                     onLoadMore = { viewModel.loadMore(paginationEnvironment) },

@@ -200,6 +200,7 @@ configurations.configureEach {
 
 dependencies {
     implementation(project(":shared"))
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     implementation("io.ktor:ktor-client-core-jvm:$ktor")
     implementation("io.ktor:ktor-client-android:$ktor")

@@ -588,6 +588,10 @@ fun ZhihuMain(
             is Account.SystemAndUpdateSettings -> SystemAndUpdateSettingsScreen(destination.setting)
             Account.DeveloperSettings -> DeveloperSettingsScreen()
             Account.DeveloperSettings.ColorScheme -> ColorSchemeScreen()
+            Account.IdentityManagement -> IdentityManagementScreen()
+            Account.ReadingSettings -> ReadingSettingsScreen()
+            Account.SettingsSearch -> SettingsSearchScreen()
+            Account.OpenSourceLicenses -> OpenSourceLicensesScreen()
             else -> {
                 // The adaptive host only claims content routes that it can render in a pane.
                 // Unsupported destinations are sent to the regular navigation stack by the host.
