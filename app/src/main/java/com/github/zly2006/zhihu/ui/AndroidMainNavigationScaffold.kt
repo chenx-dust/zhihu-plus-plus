@@ -57,7 +57,7 @@ fun AndroidMainNavigationScaffold(
     val navigationSuiteState = rememberNavigationSuiteScaffoldState()
     val shouldShowNavigation = showMainNavigationBar &&
         isTopLevelDestination &&
-        (!navigationSuiteType.isHorizontalNavigation() || !isSinglePaneDetail) &&
+        !isSinglePaneDetail &&
         (!navigationSuiteType.isHorizontalNavigation() || !autoHideBottomBar || isBottomBarVisible)
 
     LaunchedEffect(shouldShowNavigation) {

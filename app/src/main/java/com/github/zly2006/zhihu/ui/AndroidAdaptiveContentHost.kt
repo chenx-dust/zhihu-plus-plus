@@ -89,6 +89,7 @@ import com.github.zly2006.zhihu.platform.rememberSettingsStore
 import com.github.zly2006.zhihu.ui.subscreens.LIST_PANE_DEFAULT_WIDTH_DP_PREFERENCE_KEY
 import com.github.zly2006.zhihu.viewmodel.sharedArticleAnswerSwitchState
 import kotlinx.coroutines.CancellationException
+import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import java.util.UUID
 
@@ -148,7 +149,10 @@ private data class AdaptivePaneDestination(
 private data class AdaptivePaneEntry(
     val destination: AdaptivePaneDestination,
     val key: String = UUID.randomUUID().toString(),
-) : Parcelable
+) : Parcelable {
+    @IgnoredOnParcel
+    val immersiveMode = mutableStateOf(false)
+}
 
 private fun NavDestination.toAdaptivePaneDestination(): AdaptivePaneDestination? = when (this) {
     is Article -> AdaptivePaneDestination(
@@ -347,7 +351,7 @@ fun AndroidAdaptiveContentHost(
         }
         onDispose(subscription::close)
     }
-    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()).copy(
+    val windowDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()).copy(
         horizontalPartitionSpacerSize = 0.dp,
         defaultPanePreferredWidth = listPaneDefaultWidthDp.dp,
         shouldAutoFocusCurrentDestination = false,
@@ -365,6 +369,15 @@ fun AndroidAdaptiveContentHost(
     val selectedEntry = entries.lastOrNull()
     val selectedPaneDestination = selectedEntry?.destination
     val selectedDestination = selectedPaneDestination?.toNavDestination()
+    val directive = if (selectedEntry?.immersiveMode?.value == true && selectedDestination is Article) {
+        windowDirective.copy(
+            maxHorizontalPartitions = 1,
+            maxVerticalPartitions = 1,
+            excludedBounds = emptyList(),
+        )
+    } else {
+        windowDirective
+    }
     val isSinglePane = directive.maxHorizontalPartitions == 1
 
     fun updateEntries(next: List<AdaptivePaneEntry>) {
@@ -525,6 +538,7 @@ fun AndroidAdaptiveContentHost(
                                                 LocalViewModelStoreOwner provides owner,
                                                 LocalLifecycleOwner provides lifecycleOwner,
                                                 LocalArticleNavController provides null,
+                                                LocalAdaptiveDetailImmersiveMode provides entry.immersiveMode,
                                             ) {
                                                 detailContent(destination)
                                             }
