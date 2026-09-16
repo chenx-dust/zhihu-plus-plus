@@ -415,7 +415,8 @@ fun AndroidAdaptiveContentHost(
             updateEntries(entries.dropLast(1))
             scaffoldState.animateTo(scaffoldValue(entries.isNotEmpty()))
         } catch (_: CancellationException) {
-            scaffoldState.animateTo(targetScaffoldValue)
+            // 返回提交后的窗格动画也可能取消此协程，必须按当前栈恢复，避免重新显示已清空的详情窗格。
+            scaffoldState.animateTo(scaffoldValue(entries.isNotEmpty()))
         }
     }
 

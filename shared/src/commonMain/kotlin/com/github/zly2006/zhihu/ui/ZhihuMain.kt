@@ -17,34 +17,6 @@
 
 package com.github.zly2006.zhihu.ui
 
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.testTag
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.rememberLifecycleOwner
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.rememberNavController
-import com.github.zly2006.zhihu.navigation.EmptyDetail
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -61,10 +33,18 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -82,14 +62,18 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
@@ -100,14 +84,20 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.rememberLifecycleOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.github.zly2006.zhihu.account.LoginScreen
 import com.github.zly2006.zhihu.filter.ContentOpenFrom
@@ -118,6 +108,7 @@ import com.github.zly2006.zhihu.navigation.ArticleTypeNavType
 import com.github.zly2006.zhihu.navigation.CollectionContent
 import com.github.zly2006.zhihu.navigation.Collections
 import com.github.zly2006.zhihu.navigation.Daily
+import com.github.zly2006.zhihu.navigation.EmptyDetail
 import com.github.zly2006.zhihu.navigation.Follow
 import com.github.zly2006.zhihu.navigation.History
 import com.github.zly2006.zhihu.navigation.Home
@@ -257,6 +248,7 @@ fun ZhihuMain(
     val readingPlayer = rememberReadingPlayerController()
     val readingPlayerState by readingPlayer.state
     val settings = rememberSettingsStore()
+
     /** 右侧详情独立持有返回栈；栏内导航保留上级，从左侧重新选项时清空。 */
     val paneStateHolder = rememberSaveableStateHolder()
     val detailNavController = rememberNavController()
@@ -352,7 +344,8 @@ fun ZhihuMain(
     ) {
         navController.popBackStack()
     }
-    val isOnReadingDetail = hasOpenDetail || adaptiveDetailDestination is Article ||
+    val isOnReadingDetail = hasOpenDetail ||
+        adaptiveDetailDestination is Article ||
         adaptiveDetailDestination is Question ||
         adaptiveDetailDestination is Pin ||
         navEntry?.destination?.hasRoute<Article>() == true ||
@@ -536,7 +529,8 @@ fun ZhihuMain(
 
     PlatformBackHandler(
         enabled = showMainNavigation &&
-            !showDetailPane && !isSinglePaneListDetailShowingDetail &&
+            !showDetailPane &&
+            !isSinglePaneListDetailShowingDetail &&
             adaptiveDetailDestination == null &&
             mainPagerState.currentPage != 0,
     ) {
@@ -732,341 +726,344 @@ fun ZhihuMain(
         }
         if (showListDetail || !showDetailPane) {
             paneStateHolder.SaveableStateProvider("list") {
-        mainNavigationScaffold(
-            listPaneModifier.testTag("list_pane").nestedScroll(bottomBarScrollConnection),
-            isDarkTheme,
-            showMainNavigationBar && navEntry != null,
-            showMainNavigation,
-            isSinglePaneListDetailShowingDetail,
-            autoHideBottomBar,
-            isBottomBarVisible,
-            navigationItems,
-            currentBottomDestination,
-            { destination ->
-                isReadingPlayerExpandedByUser = false
-                if (currentBottomDestination?.let { it::class == destination::class } != true) {
-                    navigateTopLevel(destination)
-                } else if (tapToScrollToTopEnabled) {
-                    scrollToTopTrigger++
-                }
-            },
-            {
-                AnimatedVisibility(
-                    visible = isReadingPlayerExpanded && !enableLandscapeListDetail,
-                    enter = fadeIn(tween(220)) + scaleIn(tween(220), initialScale = 0.92f),
-                    exit = fadeOut(tween(160)) + scaleOut(tween(160), targetScale = 0.92f),
-                ) {
-                    ReadingPlayerBar(
-                        state = readingPlayerState,
-                        onPrevious = readingPlayer::playPrevious,
-                        onTogglePlayPause = readingPlayer::togglePlayPause,
-                        onNext = readingPlayer::playNext,
-                        onStop = readingPlayer::stop,
-                        onOpenQueue = { showReadingQueue = true },
-                        onPlaybackSpeedChange = { speed ->
-                            saveReadingPlaybackSpeed(settings, speed)
-                            readingPlayer.setPlaybackSpeed(speed)
-                        },
-                        onBackgroundInteraction = {
-                            if (!isOnReadingDetail) isReadingPlayerExpandedByUser = false
-                        },
-                        modifier = Modifier
-                            .onSizeChanged { readingPlayerHeightPx = it.height }
-                            .graphicsLayer {
-                                translationY = readingPlayerOverlayOffsetState.verticalOffsetPx
-                            },
-                    )
-                }
-            },
-            { innerPadding ->
-                CompositionLocalProvider(
-                    LocalLifecycleOwner provides listLifecycleOwner,
-                    LocalSelectedContentDestination provides selectedContentDestination,
-                    LocalArticleNavController provides navController,
-                    LocalNavigator provides Navigator(
-                        onNavigate = { destination ->
-                            if (useSecondaryContentNavigation && (destination.isDetailPaneDestination() ||
-                                (showListDetail && currentMainTabDestination == Account && destination.isAccountDetailDestination()))) {
-                                openListDetail(destination)
-                            } else {
-                                navigate(destination)
-                            }
-                        },
-                        onNavigateBack = navController::popBackStack,
-                        onNavigateTopLevel = ::navigateTopLevel,
-                    ),
-                    LocalReadingPlayerOverlayPadding provides readingPlayerOverlayPadding,
-                    LocalReadingPlayerOverlayOffsetState provides readingPlayerOverlayOffsetState,
-                    LocalAdaptiveDetailBottomPadding provides (
-                        innerPadding.calculateBottomPadding() - bottomPadding
-                    ).coerceAtLeast(0.dp),
-                    LocalAdaptiveVideoOpener provides { video, source ->
-                        onAdaptiveVideoOpened(video, source)
+                mainNavigationScaffold(
+                    listPaneModifier.testTag("list_pane").nestedScroll(bottomBarScrollConnection),
+                    isDarkTheme,
+                    showMainNavigationBar && navEntry != null,
+                    showMainNavigation,
+                    isSinglePaneListDetailShowingDetail,
+                    autoHideBottomBar,
+                    isBottomBarVisible,
+                    navigationItems,
+                    currentBottomDestination,
+                    { destination ->
+                        isReadingPlayerExpandedByUser = false
+                        if (currentBottomDestination?.let { it::class == destination::class } != true) {
+                            navigateTopLevel(destination)
+                        } else if (tapToScrollToTopEnabled) {
+                            scrollToTopTrigger++
+                        }
                     },
-                ) {
-                    NavHost(
-                        navController,
-                        modifier = Modifier.pointerInput(Unit) {
-                            while (true) {
-                                awaitPointerEventScope {
-                                    awaitFirstDown(
-                                        requireUnconsumed = false,
-                                        pass = PointerEventPass.Initial,
-                                    )
-                                    while (
-                                        awaitPointerEvent(PointerEventPass.Final)
-                                            .changes
-                                            .any { it.pressed }
+                    {
+                        AnimatedVisibility(
+                            visible = isReadingPlayerExpanded && !enableLandscapeListDetail,
+                            enter = fadeIn(tween(220)) + scaleIn(tween(220), initialScale = 0.92f),
+                            exit = fadeOut(tween(160)) + scaleOut(tween(160), targetScale = 0.92f),
+                        ) {
+                            ReadingPlayerBar(
+                                state = readingPlayerState,
+                                onPrevious = readingPlayer::playPrevious,
+                                onTogglePlayPause = readingPlayer::togglePlayPause,
+                                onNext = readingPlayer::playNext,
+                                onStop = readingPlayer::stop,
+                                onOpenQueue = { showReadingQueue = true },
+                                onPlaybackSpeedChange = { speed ->
+                                    saveReadingPlaybackSpeed(settings, speed)
+                                    readingPlayer.setPlaybackSpeed(speed)
+                                },
+                                onBackgroundInteraction = {
+                                    if (!isOnReadingDetail) isReadingPlayerExpandedByUser = false
+                                },
+                                modifier = Modifier
+                                    .onSizeChanged { readingPlayerHeightPx = it.height }
+                                    .graphicsLayer {
+                                        translationY = readingPlayerOverlayOffsetState.verticalOffsetPx
+                                    },
+                            )
+                        }
+                    },
+                    { innerPadding ->
+                        CompositionLocalProvider(
+                            LocalLifecycleOwner provides listLifecycleOwner,
+                            LocalSelectedContentDestination provides selectedContentDestination,
+                            LocalArticleNavController provides navController,
+                            LocalNavigator provides Navigator(
+                                onNavigate = { destination ->
+                                    if (useSecondaryContentNavigation &&
+                                        (
+                                            destination.isDetailPaneDestination() ||
+                                                (showListDetail && currentMainTabDestination == Account && destination.isAccountDetailDestination())
+                                        )
                                     ) {
-                                        // 等手势完成后再重组，避免取消同一次背景点击或滚动。
+                                        openListDetail(destination)
+                                    } else {
+                                        navigate(destination)
+                                    }
+                                },
+                                onNavigateBack = navController::popBackStack,
+                                onNavigateTopLevel = ::navigateTopLevel,
+                            ),
+                            LocalReadingPlayerOverlayPadding provides readingPlayerOverlayPadding,
+                            LocalReadingPlayerOverlayOffsetState provides readingPlayerOverlayOffsetState,
+                            LocalAdaptiveDetailBottomPadding provides (
+                                innerPadding.calculateBottomPadding() - bottomPadding
+                            ).coerceAtLeast(0.dp),
+                            LocalAdaptiveVideoOpener provides { video, source ->
+                                onAdaptiveVideoOpened(video, source)
+                            },
+                        ) {
+                            NavHost(
+                                navController,
+                                modifier = Modifier.pointerInput(Unit) {
+                                    while (true) {
+                                        awaitPointerEventScope {
+                                            awaitFirstDown(
+                                                requireUnconsumed = false,
+                                                pass = PointerEventPass.Initial,
+                                            )
+                                            while (
+                                                awaitPointerEvent(PointerEventPass.Final)
+                                                    .changes
+                                                    .any { it.pressed }
+                                            ) {
+                                                // 等手势完成后再重组，避免取消同一次背景点击或滚动。
+                                            }
+                                        }
+                                        if (shouldCompactPlayerOnBackgroundInteraction) {
+                                            delay(100)
+                                            isReadingPlayerExpandedByUser = false
+                                        }
+                                    }
+                                },
+                                startDestination = MainTabs,
+                                enterTransition = {
+                                    slideInHorizontally(tween(300)) { it }
+                                },
+                                exitTransition = {
+                                    ExitTransition.None
+                                },
+                                popEnterTransition = {
+                                    EnterTransition.None
+                                },
+                                popExitTransition = {
+                                    slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300))
+                                },
+                            ) {
+                                composable<MainTabs> { routeEntry ->
+                                    AdaptiveRouteContent(
+                                        hostRouteId = routeEntry.id,
+                                        listContentKey = mainTabPages.getOrNull(mainPagerState.currentPage)?.key,
+                                    ) {
+                                        MainTabsPager(
+                                            pagerState = mainPagerState,
+                                            pages = mainTabPages,
+                                            scrollToTopTrigger = scrollToTopTrigger,
+                                            innerPadding = innerPadding,
+                                            collectionDirectBrowseEnabled = collectionDirectBrowseEnabled,
+                                            showHomeTopActions = showHomeTopActions,
+                                        )
                                     }
                                 }
-                                if (shouldCompactPlayerOnBackgroundInteraction) {
-                                    delay(100)
-                                    isReadingPlayerExpandedByUser = false
+                                composable<Login> {
+                                    LoginScreen(
+                                        onLoginComplete = { navController.popBackStack() },
+                                        onOpenTelemetrySettings = {
+                                            navController.navigate(Account.SystemAndUpdateSettings("allowTelemetry"))
+                                        },
+                                    )
                                 }
-                            }
-                        },
-                        startDestination = MainTabs,
-                        enterTransition = {
-                            slideInHorizontally(tween(300)) { it }
-                        },
-                        exitTransition = {
-                            ExitTransition.None
-                        },
-                        popEnterTransition = {
-                            EnterTransition.None
-                        },
-                        popExitTransition = {
-                            slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300))
-                        },
-                    ) {
-                        composable<MainTabs> { routeEntry ->
-                            AdaptiveRouteContent(
-                                hostRouteId = routeEntry.id,
-                                listContentKey = mainTabPages.getOrNull(mainPagerState.currentPage)?.key,
-                            ) {
-                                MainTabsPager(
-                                    pagerState = mainPagerState,
-                                    pages = mainTabPages,
-                                    scrollToTopTrigger = scrollToTopTrigger,
-                                    innerPadding = innerPadding,
-                                    collectionDirectBrowseEnabled = collectionDirectBrowseEnabled,
-                                    showHomeTopActions = showHomeTopActions,
-                                )
-                            }
-                        }
-                        composable<Login> {
-                            LoginScreen(
-                                onLoginComplete = { navController.popBackStack() },
-                                onOpenTelemetrySettings = {
-                                    navController.navigate(Account.SystemAndUpdateSettings("allowTelemetry"))
-                                },
-                            )
-                        }
-                        composable<Question> { navEntry ->
-                            val question: Question = navEntry.toRoute()
-                            AdaptiveRouteContent(
-                                hostRouteId = navEntry.id,
-                                listContentKey = "question:${question.questionId}",
-                            ) {
-                                QuestionScreen(question)
-                            }
-                        }
-                        composable<Topic> { navEntry ->
-                            val topic: Topic = navEntry.toRoute()
-                            AdaptiveRouteContent(
-                                hostRouteId = navEntry.id,
-                                listContentKey = "topic:${topic.id}:${topic.section}",
-                            ) {
-                                TopicScreen(topic)
-                            }
-                        }
-                        composable<WriteAnswer> { navEntry ->
-                            val args: WriteAnswer = navEntry.toRoute()
-                            WriteAnswerScreen(args)
-                        }
-                        composable<WritePin> { navEntry ->
-                            WritePinScreen(navEntry.toRoute())
-                        }
-                        composable<Article>(
-                            typeMap = mapOf(typeOf<ArticleType>() to ArticleTypeNavType),
-                            enterTransition = articleEnterTransition,
-                            exitTransition = articleExitTransition,
-                        ) { navEntry ->
-                            val article: Article = navEntry.toRoute()
-                            if (!enableLandscapeListDetail) articleContent(article, navEntry)
-                        }
-                        composable<HotList> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "hot-list") {
-                                HotListScreen(innerPadding)
-                            }
-                        }
-                        composable<Follow> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "follow") {
-                                FollowScreen(
-                                    scrollToTopTrigger = scrollToTopTrigger,
-                                    innerPadding = innerPadding,
-                                    parentPagerState = mainPagerState,
-                                )
-                            }
-                        }
-                        composable<Daily> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "daily") {
-                                DailyScreen()
-                            }
-                        }
-                        composable<History> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "history") {
-                                LegacyLocalHistoryScreen(innerPadding)
-                            }
-                        }
-                        composable<OnlineHistory> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "online-history") {
-                                OnlineHistoryScreen()
-                            }
-                        }
-                        composable<Account> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "account") {
-                                AccountSettingScreen(innerPadding)
-                            }
-                        }
-                        composable<Search>(
-                            enterTransition = {
-                                if (initialState.destination.hasRoute<Search>()) {
-                                    EnterTransition.None
-                                } else {
-                                    fadeIn(animationSpec = tween(durationMillis = 240)) +
-                                        slideInVertically(animationSpec = tween(durationMillis = 280)) { it / 16 } +
-                                        scaleIn(
-                                            animationSpec = tween(durationMillis = 280),
-                                            initialScale = 0.985f,
+                                composable<Question> { navEntry ->
+                                    val question: Question = navEntry.toRoute()
+                                    AdaptiveRouteContent(
+                                        hostRouteId = navEntry.id,
+                                        listContentKey = "question:${question.questionId}",
+                                    ) {
+                                        QuestionScreen(question)
+                                    }
+                                }
+                                composable<Topic> { navEntry ->
+                                    val topic: Topic = navEntry.toRoute()
+                                    AdaptiveRouteContent(
+                                        hostRouteId = navEntry.id,
+                                        listContentKey = "topic:${topic.id}:${topic.section}",
+                                    ) {
+                                        TopicScreen(topic)
+                                    }
+                                }
+                                composable<WriteAnswer> { navEntry ->
+                                    val args: WriteAnswer = navEntry.toRoute()
+                                    WriteAnswerScreen(args)
+                                }
+                                composable<WritePin> { navEntry ->
+                                    WritePinScreen(navEntry.toRoute())
+                                }
+                                composable<Article>(
+                                    typeMap = mapOf(typeOf<ArticleType>() to ArticleTypeNavType),
+                                    enterTransition = articleEnterTransition,
+                                    exitTransition = articleExitTransition,
+                                ) { navEntry ->
+                                    val article: Article = navEntry.toRoute()
+                                    if (!enableLandscapeListDetail) articleContent(article, navEntry)
+                                }
+                                composable<HotList> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "hot-list") {
+                                        HotListScreen(innerPadding)
+                                    }
+                                }
+                                composable<Follow> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "follow") {
+                                        FollowScreen(
+                                            scrollToTopTrigger = scrollToTopTrigger,
+                                            innerPadding = innerPadding,
+                                            parentPagerState = mainPagerState,
                                         )
+                                    }
                                 }
-                            },
-                            popExitTransition = {
-                                if (targetState.destination.hasRoute<Search>()) {
-                                    ExitTransition.None
-                                } else {
-                                    fadeOut(animationSpec = tween(durationMillis = 180)) +
-                                        slideOutVertically(animationSpec = tween(durationMillis = 220)) { it / 20 } +
-                                        scaleOut(
-                                            animationSpec = tween(durationMillis = 220),
-                                            targetScale = 0.985f,
+                                composable<Daily> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "daily") {
+                                        DailyScreen()
+                                    }
+                                }
+                                composable<History> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "history") {
+                                        LegacyLocalHistoryScreen(innerPadding)
+                                    }
+                                }
+                                composable<OnlineHistory> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "online-history") {
+                                        OnlineHistoryScreen()
+                                    }
+                                }
+                                composable<Account> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "account") {
+                                        AccountSettingScreen(innerPadding)
+                                    }
+                                }
+                                composable<Search>(
+                                    enterTransition = {
+                                        if (initialState.destination.hasRoute<Search>()) {
+                                            EnterTransition.None
+                                        } else {
+                                            fadeIn(animationSpec = tween(durationMillis = 240)) +
+                                                slideInVertically(animationSpec = tween(durationMillis = 280)) { it / 16 } +
+                                                scaleIn(
+                                                    animationSpec = tween(durationMillis = 280),
+                                                    initialScale = 0.985f,
+                                                )
+                                        }
+                                    },
+                                    popExitTransition = {
+                                        if (targetState.destination.hasRoute<Search>()) {
+                                            ExitTransition.None
+                                        } else {
+                                            fadeOut(animationSpec = tween(durationMillis = 180)) +
+                                                slideOutVertically(animationSpec = tween(durationMillis = 220)) { it / 20 } +
+                                                scaleOut(
+                                                    animationSpec = tween(durationMillis = 220),
+                                                    targetScale = 0.985f,
+                                                )
+                                        }
+                                    },
+                                ) { navEntry ->
+                                    val search: Search = navEntry.toRoute()
+                                    AdaptiveRouteContent(
+                                        hostRouteId = navEntry.id,
+                                        listContentKey = "search:${search.query}:${search.restrictedMemberHashId}",
+                                    ) {
+                                        SearchScreen(search)
+                                    }
+                                }
+                                composable<Collections> { navEntry ->
+                                    val data: Collections = navEntry.toRoute()
+                                    AdaptiveRouteContent(
+                                        hostRouteId = navEntry.id,
+                                        listContentKey = "collections:${data.userToken}",
+                                    ) {
+                                        CollectionScreen(
+                                            urlToken = data.userToken,
+                                            contentPadding = innerPadding,
                                         )
+                                    }
                                 }
-                            },
-                        ) { navEntry ->
-                            val search: Search = navEntry.toRoute()
-                            AdaptiveRouteContent(
-                                hostRouteId = navEntry.id,
-                                listContentKey = "search:${search.query}:${search.restrictedMemberHashId}",
-                            ) {
-                                SearchScreen(search)
+                                composable<CollectionContent> { navEntry ->
+                                    val content: CollectionContent = navEntry.toRoute()
+                                    AdaptiveRouteContent(
+                                        hostRouteId = navEntry.id,
+                                        listContentKey = "collection-content:${content.collectionId}",
+                                    ) {
+                                        CollectionContentScreen(content.collectionId)
+                                    }
+                                }
+                                composable<Person> { navEntry ->
+                                    val person: Person = navEntry.toRoute()
+                                    AdaptiveRouteContent(
+                                        hostRouteId = navEntry.id,
+                                        listContentKey = "person:${person.id}:${person.urlToken}",
+                                    ) {
+                                        PeopleScreen(person)
+                                    }
+                                }
+                                composable<Pin> { navEntry ->
+                                    val pin: Pin = navEntry.toRoute()
+                                    if (!enableLandscapeListDetail) PinScreen(pin)
+                                }
+                                composable<Account.RecommendSettings.Blocklist> {
+                                    BlocklistSettingsScreen(blocklistSettingsNlpContent)
+                                }
+                                composable<Account.RecommendSettings.BlockedFeedHistory> {
+                                    BlockedFeedHistoryScreen()
+                                }
+                                composable<Notification> { navEntry ->
+                                    AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "notification") {
+                                        NotificationScreen()
+                                    }
+                                }
+                                composable<Notification.Entry> { navEntry ->
+                                    val entry: Notification.Entry = navEntry.toRoute()
+                                    NotificationTimelineScreen(entry.entryName, entry.title)
+                                }
+                                composable<Notification.Invitations> {
+                                    NotificationTimelineScreen("invite", "邀请回答")
+                                }
+                                composable<Notification.Message> { navEntry ->
+                                    PrivateMessageScreen(navEntry.toRoute())
+                                }
+                                composable<Notification.NotificationSettings> { navEntry ->
+                                    NotificationSettingsScreen(
+                                        setting = navEntry.toRoute<Notification.NotificationSettings>().setting,
+                                    )
+                                }
+                                composable<SentenceSimilarityTest> {
+                                    sentenceSimilarityContent()
+                                }
+                                composable<Account.AppearanceSettings> { navEntry ->
+                                    val args = navEntry.toRoute<Account.AppearanceSettings>()
+                                    AppearanceSettingsScreen(
+                                        setting = args.setting,
+                                        onExit = reloadBottomBarPreferences,
+                                    )
+                                }
+                                composable<Account.RecommendSettings> { navEntry ->
+                                    val args = navEntry.toRoute<Account.RecommendSettings>()
+                                    ContentFilterSettingsScreen(args.setting)
+                                }
+                                composable<Account.IdentityManagement> {
+                                    IdentityManagementScreen()
+                                }
+                                composable<Account.SystemAndUpdateSettings> { navEntry ->
+                                    SystemAndUpdateSettingsScreen(
+                                        setting = navEntry.toRoute<Account.SystemAndUpdateSettings>().setting,
+                                    )
+                                }
+                                composable<Account.ReadingSettings> {
+                                    ReadingSettingsScreen()
+                                }
+                                composable<Account.SettingsSearch> {
+                                    SettingsSearchScreen()
+                                }
+                                composable<Account.OpenSourceLicenses> {
+                                    OpenSourceLicensesScreen()
+                                }
+                                composable<Account.DeveloperSettings> {
+                                    DeveloperSettingsScreen()
+                                }
+                                composable<Account.DeveloperSettings.ColorScheme> {
+                                    ColorSchemeScreen()
+                                }
                             }
                         }
-                        composable<Collections> { navEntry ->
-                            val data: Collections = navEntry.toRoute()
-                            AdaptiveRouteContent(
-                                hostRouteId = navEntry.id,
-                                listContentKey = "collections:${data.userToken}",
-                            ) {
-                                CollectionScreen(
-                                    urlToken = data.userToken,
-                                    contentPadding = innerPadding,
-                                )
-                            }
-                        }
-                        composable<CollectionContent> { navEntry ->
-                            val content: CollectionContent = navEntry.toRoute()
-                            AdaptiveRouteContent(
-                                hostRouteId = navEntry.id,
-                                listContentKey = "collection-content:${content.collectionId}",
-                            ) {
-                                CollectionContentScreen(content.collectionId)
-                            }
-                        }
-                        composable<Person> { navEntry ->
-                            val person: Person = navEntry.toRoute()
-                            AdaptiveRouteContent(
-                                hostRouteId = navEntry.id,
-                                listContentKey = "person:${person.id}:${person.urlToken}",
-                            ) {
-                                PeopleScreen(person)
-                            }
-                        }
-                        composable<Pin> { navEntry ->
-                            val pin: Pin = navEntry.toRoute()
-                            if (!enableLandscapeListDetail) PinScreen(pin)
-                        }
-                        composable<Account.RecommendSettings.Blocklist> {
-                            BlocklistSettingsScreen(blocklistSettingsNlpContent)
-                        }
-                        composable<Account.RecommendSettings.BlockedFeedHistory> {
-                            BlockedFeedHistoryScreen()
-                        }
-                        composable<Notification> { navEntry ->
-                            AdaptiveRouteContent(hostRouteId = navEntry.id, listContentKey = "notification") {
-                                NotificationScreen()
-                            }
-                        }
-                        composable<Notification.Entry> { navEntry ->
-                            val entry: Notification.Entry = navEntry.toRoute()
-                            NotificationTimelineScreen(entry.entryName, entry.title)
-                        }
-                        composable<Notification.Invitations> {
-                            NotificationTimelineScreen("invite", "邀请回答")
-                        }
-                        composable<Notification.Message> { navEntry ->
-                            PrivateMessageScreen(navEntry.toRoute())
-                        }
-                        composable<Notification.NotificationSettings> { navEntry ->
-                            NotificationSettingsScreen(
-                                setting = navEntry.toRoute<Notification.NotificationSettings>().setting,
-                            )
-                        }
-                        composable<SentenceSimilarityTest> {
-                            sentenceSimilarityContent()
-                        }
-                        composable<Account.AppearanceSettings> { navEntry ->
-                            val args = navEntry.toRoute<Account.AppearanceSettings>()
-                            AppearanceSettingsScreen(
-                                setting = args.setting,
-                                onExit = reloadBottomBarPreferences,
-                            )
-                        }
-                        composable<Account.RecommendSettings> { navEntry ->
-                            val args = navEntry.toRoute<Account.RecommendSettings>()
-                            ContentFilterSettingsScreen(args.setting)
-                        }
-                        composable<Account.IdentityManagement> {
-                            IdentityManagementScreen()
-                        }
-                        composable<Account.SystemAndUpdateSettings> { navEntry ->
-                            SystemAndUpdateSettingsScreen(
-                                setting = navEntry.toRoute<Account.SystemAndUpdateSettings>().setting,
-                            )
-                        }
-                        composable<Account.ReadingSettings> {
-                            ReadingSettingsScreen()
-                        }
-                        composable<Account.SettingsSearch> {
-                            SettingsSearchScreen()
-                        }
-                        composable<Account.OpenSourceLicenses> {
-                            OpenSourceLicensesScreen()
-                        }
-                        composable<Account.DeveloperSettings> {
-                            DeveloperSettingsScreen()
-                        }
-                        composable<Account.DeveloperSettings.ColorScheme> {
-                            ColorSchemeScreen()
-                        }
-                    }
-                }
-            },
-        )
-
+                    },
+                )
             }
         }
         if (showListDetail || showDetailPane || detailEntry == null) {
