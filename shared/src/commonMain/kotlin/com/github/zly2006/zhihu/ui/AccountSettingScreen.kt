@@ -134,6 +134,10 @@ const val ACCOUNT_SETTINGS_LICENSES_TAG = "accountSettings.licenses"
 const val ACCOUNT_SETTINGS_IDENTITY_MANAGEMENT_TAG = "accountSettings.identityManagement"
 
 private enum class AdaptiveSettingsGroup {
+    IdentityManagement,
+    Reading,
+    Search,
+    Licenses,
     Appearance,
     Recommend,
     SystemAndUpdate,
@@ -141,6 +145,10 @@ private enum class AdaptiveSettingsGroup {
 }
 
 private fun NavDestination.adaptiveSettingsGroup(): AdaptiveSettingsGroup? = when (this) {
+    Account.IdentityManagement -> AdaptiveSettingsGroup.IdentityManagement
+    Account.ReadingSettings -> AdaptiveSettingsGroup.Reading
+    Account.SettingsSearch -> AdaptiveSettingsGroup.Search
+    Account.OpenSourceLicenses -> AdaptiveSettingsGroup.Licenses
     is Account.AppearanceSettings -> AdaptiveSettingsGroup.Appearance
     is Account.RecommendSettings,
     Account.RecommendSettings.Blocklist,
@@ -248,10 +256,10 @@ fun AccountSettingScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(innerPadding)
                 .testTag(ACCOUNT_SETTINGS_SCROLL_TAG)
                 .pageTurnViewportWithGuide(pageTurnTarget)
                 .verticalScroll(scrollState)
+                .padding(innerPadding)
                 .padding(padding),
         ) {
             LaunchedEffect(data.login, refreshAccountProfileOnEnter) {
@@ -500,7 +508,11 @@ fun AccountSettingScreen(
                         .height(36.dp)
                         .testTag(ACCOUNT_SETTINGS_SEARCH_TAG),
                     shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = if (selectedSettingsGroup == AdaptiveSettingsGroup.Search) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
                     onClick = {
                         navigator.onNavigate(Account.SettingsSearch)
                     },
@@ -536,6 +548,7 @@ fun AccountSettingScreen(
                         icon = { Icon(Icons.Default.SwitchAccount, null) },
                         modifier = Modifier.testTag(ACCOUNT_SETTINGS_IDENTITY_MANAGEMENT_TAG),
                         onClick = { navigator.onNavigate(Account.IdentityManagement) },
+                        colors = settingColors(Account.IdentityManagement),
                     )
                 }
 
@@ -555,6 +568,7 @@ fun AccountSettingScreen(
                         icon = { Icon(Icons.AutoMirrored.Filled.VolumeUp, null) },
                         modifier = Modifier.testTag(ACCOUNT_SETTINGS_READING_TAG),
                         onClick = { navigator.onNavigate(Account.ReadingSettings) },
+                        colors = settingColors(Account.ReadingSettings),
                     )
                 }
 
@@ -668,6 +682,7 @@ fun AccountSettingScreen(
                     icon = { Icon(painterResource(Res.drawable.ic_license_24dp), null) },
                     modifier = Modifier.testTag(ACCOUNT_SETTINGS_LICENSES_TAG),
                     onClick = { navigator.onNavigate(Account.OpenSourceLicenses) },
+                    colors = settingColors(Account.OpenSourceLicenses),
                 )
             }
         }
