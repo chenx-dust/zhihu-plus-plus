@@ -117,6 +117,10 @@ private data class AdaptivePaneDestination(
         DeveloperColorScheme,
         RecommendBlocklist,
         RecommendBlockedHistory,
+        IdentityManagement,
+        ReadingSettings,
+        SettingsSearch,
+        OpenSourceLicenses,
     }
 
     private val stableIdentity: String
@@ -200,6 +204,10 @@ private fun NavDestination.toAdaptivePaneDestination(): AdaptivePaneDestination?
     Account.RecommendSettings.BlockedFeedHistory -> AdaptivePaneDestination(
         type = AdaptivePaneDestination.Type.RecommendBlockedHistory,
     )
+    Account.IdentityManagement -> AdaptivePaneDestination(AdaptivePaneDestination.Type.IdentityManagement)
+    Account.ReadingSettings -> AdaptivePaneDestination(AdaptivePaneDestination.Type.ReadingSettings)
+    Account.SettingsSearch -> AdaptivePaneDestination(AdaptivePaneDestination.Type.SettingsSearch)
+    Account.OpenSourceLicenses -> AdaptivePaneDestination(AdaptivePaneDestination.Type.OpenSourceLicenses)
     else -> null
 }
 
@@ -262,6 +270,10 @@ private fun AdaptivePaneDestination.toNavDestination(): NavDestination? = when (
     AdaptivePaneDestination.Type.DeveloperColorScheme -> Account.DeveloperSettings.ColorScheme
     AdaptivePaneDestination.Type.RecommendBlocklist -> Account.RecommendSettings.Blocklist
     AdaptivePaneDestination.Type.RecommendBlockedHistory -> Account.RecommendSettings.BlockedFeedHistory
+    AdaptivePaneDestination.Type.IdentityManagement -> Account.IdentityManagement
+    AdaptivePaneDestination.Type.ReadingSettings -> Account.ReadingSettings
+    AdaptivePaneDestination.Type.SettingsSearch -> Account.SettingsSearch
+    AdaptivePaneDestination.Type.OpenSourceLicenses -> Account.OpenSourceLicenses
 }
 
 @Composable
@@ -411,8 +423,11 @@ fun AndroidAdaptiveContentHost(
         }
         onDestinationOpened(
             destination,
-            if (fromList) destination.readingQueueOpenFrom()
-            else adaptiveOpenFrom(currentDestination?.toNavDestination(), destination),
+            if (fromList) {
+                destination.readingQueueOpenFrom()
+            } else {
+                adaptiveOpenFrom(currentDestination?.toNavDestination(), destination)
+            },
         )
         updateEntries(retained + AdaptivePaneEntry(paneDestination))
     }
@@ -443,8 +458,11 @@ fun AndroidAdaptiveContentHost(
             }
         },
         onNavigateBack = {
-            if (entries.isNotEmpty()) updateEntries(entries.dropLast(1))
-            else rootNavigator.onNavigateBack()
+            if (entries.isNotEmpty()) {
+                updateEntries(entries.dropLast(1))
+            } else {
+                rootNavigator.onNavigateBack()
+            }
         },
         onNavigateTopLevel = rootNavigator.onNavigateTopLevel,
     )
